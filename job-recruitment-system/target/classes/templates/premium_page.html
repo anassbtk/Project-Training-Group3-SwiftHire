@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Upgrade to SwiftHire Premium</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f4f6f8; padding: 20px; }
+        .tier-card {
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 450px;
+        }
+        .tier-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.15);
+        }
+        .header-basic { background-color: #cbd5e1; }
+        .header-premium { background-color: #FFD700; color: #333; }
+        .header-pro { background-color: #008080; color: white; }
+        .btn-premium { background-color: #FFD700; color: #333; border: none; }
+        .btn-premium:hover { background-color: #CCAC00; }
+        .btn-pro { background-color: #008080; color: white; border: none; }
+        .btn-pro:hover { background-color: #006666; }
+        .feature-list i { width: 1.25rem; }
+    </style>
+</head>
+<body class="flex items-center justify-center">
+
+<main class="max-w-6xl mx-auto py-12">
+    <header class="text-center mb-12">
+        <h1 class="text-4xl font-extrabold text-gray-900 mb-2">Choose Your SwiftHire Plan</h1>
+        <p class="text-xl text-gray-600">Unlock advanced features, unlimited capacity, and direct access.</p>
+    </header>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+
+        <div class="tier-card">
+            <div class="header-basic p-6 rounded-t-xl">
+                <h2 class="text-2xl font-bold text-gray-800" th:text="${tierBasic}">BASIC</h2>
+                <p class="text-gray-700 text-sm mt-1">Free Forever</p>
+            </div>
+            <div class="p-6 flex-grow">
+                <p class="text-3xl font-extrabold text-gray-900">$0<span class="text-base font-normal text-gray-500">/month</span></p>
+                <ul class="feature-list mt-6 space-y-3 text-gray-700">
+                    <li class="flex items-start gap-2">
+                        <i class="fa-solid fa-check text-green-500 mt-1"></i>
+                        <span>Basic Job Search & Filtering</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <i class="fa-solid fa-check text-green-500 mt-1"></i>
+                        <span>Profile Builder & Hosting</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <i class="fa-solid fa-check text-red-500 mt-1"></i>
+                        <span>Limited to **10 Active Applications**</span>
+                    </li>
+                    <li class="flex items-start gap-2 opacity-50">
+                        <i class="fa-solid fa-xmark text-gray-400 mt-1"></i>
+                        <span>Direct Candidate Contact (Employer)</span>
+                    </li>
+                    <li class="flex items-start gap-2 opacity-50">
+                        <i class="fa-solid fa-xmark text-gray-400 mt-1"></i>
+                        <span>AI Job Assistant Tool</span>
+                    </li>
+                </ul>
+            </div>
+            <div class="p-6 pt-0">
+                <a href="/login" class="bg-gray-200 text-gray-600 font-semibold py-3 px-4 w-full block text-center rounded-lg cursor-default">
+                    Current Plan
+                </a>
+            </div>
+        </div>
+
+        <div class="tier-card border-2 border-yellow-500 shadow-xl">
+            <div class="header-premium p-6 rounded-t-xl flex justify-between items-center">
+                <h2 class="text-2xl font-bold" th:text="${tierPremium}">PREMIUM</h2>
+                <span class="text-xs font-bold py-1 px-3 bg-yellow-600 text-white rounded-full">RECOMMENDED</span>
+            </div>
+            <div class="p-6 flex-grow">
+                <p class="text-3xl font-extrabold text-gray-900">$9.99<span class="text-base font-normal text-gray-500">/month</span></p>
+                <ul class="feature-list mt-6 space-y-3 text-gray-700">
+                    <li class="flex items-start gap-2">
+                        <i class="fa-solid fa-check text-green-500 mt-1"></i>
+                        <span>**Unlimited** Applications (Seeker)</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <i class="fa-solid fa-check text-green-500 mt-1"></i>
+                        <span>**Advanced** Candidate Filters (Employer)</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <i class="fa-solid fa-check text-green-500 mt-1"></i>
+                        <span>Direct Candidate Contact (Employer)</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <i class="fa-solid fa-check text-green-500 mt-1"></i>
+                        <span>Priority Support</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <i class="fa-solid fa-check text-green-500 mt-1"></i>
+                        <span>AI Job Assistant Tool</span>
+                    </li>
+                </ul>
+            </div>
+            <div class="p-6 pt-0">
+                <form th:action="@{/premium/checkout}" method="post">
+                    <input type="hidden" name="tier" th:value="${tierPremium}" />
+                    <button type="submit" class="btn-premium font-semibold py-3 px-4 w-full block text-center rounded-lg hover:shadow-lg">
+                        Upgrade Now
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="tier-card">
+            <div class="header-pro p-6 rounded-t-xl">
+                <h2 class="text-2xl font-bold" th:text="${tierPro}">PRO</h2>
+                <p class="text-white/80 text-sm mt-1">For High-Volume Recruiting</p>
+            </div>
+            <div class="p-6 flex-grow">
+                <p class="text-3xl font-extrabold text-gray-900">$49.99<span class="text-base font-normal text-gray-500">/month</span></p>
+                <ul class="feature-list mt-6 space-y-3 text-gray-700">
+                    <li class="flex items-start gap-2">
+                        <i class="fa-solid fa-check text-green-500 mt-1"></i>
+                        <span>All PREMIUM Features Included</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <i class="fa-solid fa-check text-green-500 mt-1"></i>
+                        <span>**Job Post Boost** (2x Visibility)</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <i class="fa-solid fa-check text-green-500 mt-1"></i>
+                        <span>Dedicated Account Manager</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <i class="fa-solid fa-check text-green-500 mt-1"></i>
+                        <span>Customized Reporting</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <i class="fa-solid fa-check text-green-500 mt-1"></i>
+                        <span>Priority Candidate Sourcing</span>
+                    </li>
+                </ul>
+            </div>
+            <div class="p-6 pt-0">
+                <form th:action="@{/premium/checkout}" method="post">
+                    <input type="hidden" name="tier" th:value="${tierPro}" />
+                    <button type="submit" class="btn-pro font-semibold py-3 px-4 w-full block text-center rounded-lg hover:shadow-lg">
+                        Contact Sales
+                    </button>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+</body>
+</html>

@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>My Profile Settings | SwiftHire</title>
+
+    <link rel="icon" type="image/png" th:href="@{/images/nav.png}">
+
+    <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}"/>
+    <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : ''}"/>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'sans-serif']
+                    },
+                    colors: {
+                        'theme-teal': {
+                            DEFAULT: '#008080',
+                            '500': '#008080',
+                            '600': '#006666',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* --- GLOBAL STYLES --- */
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        @keyframes fade-in-scale-up {
+            from { opacity: 0; transform: scale(0.98) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .animate-new {
+            animation: fade-in-scale-up 0.5s ease-out forwards;
+            opacity: 0;
+        }
+        main.dashboard-layout {
+            max-width: 1200px;
+            margin: 20px auto;
+            display: flex;
+            align-items: flex-start;
+            gap: 24px;
+        }
+        .profile-content { flex: 3; width: 100%; }
+        .profile-sidebar {
+            flex: 1;
+            position: sticky;
+            top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .card {
+            background-color: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease-in-out;
+        }
+        .card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); /* Lift on hover */
+            transform: translateY(-2px);
+        }
+        .card-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .card-header h2, .card-header h3 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #008080; /* THEME-TEAL */
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .card-body { padding: 1.25rem; }
+        .profile-nav-list { list-style: none; padding: 0; margin: 0; }
+        .profile-nav-list li a {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            text-decoration: none;
+            color: #374151;
+            font-weight: 500;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+        .profile-nav-list li a:hover {
+            background-color: #f0fdfa; /* teal-50 */
+            color: #008080;
+            transform: translateX(3px);
+        }
+        .icon-status {
+            width: 20px;
+            text-align: center;
+            margin-right: 8px;
+            font-size: 0.9em;
+        }
+        .icon-status.pending {
+            color: #f59e0b; /* Warning/Pending Yellow */
+        }
+        .icon-status.completed {
+            color: #10b981; /* Success Green */
+        }
+        @keyframes checkmark-pop {
+            0% { transform: scale(0.5); opacity: 0; }
+            80% { transform: scale(1.2); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .icon-status.completed {
+            animation: checkmark-pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: .5rem;
+            color: #374151;
+        }
+        .form-control, .form-select {
+            display: block;
+            width: 100%;
+            padding: .5rem .75rem;
+            font-size: 1rem;
+            line-height: 1.5;
+            color: #495057;
+            background-color: #fff;
+            border: 1px solid #ced4da;
+            border-radius: 0.375rem;
+            box-sizing: border-box;
+            transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: #008080;
+            outline: 0;
+            box-shadow: 0 0 0 0.2rem rgba(0,128,128,0.25); /* Teal glow */
+        }
+        .form-row { display: flex; flex-wrap: wrap; gap: 20px; }
+        .form-row .form-group { flex: 1; min-width: 250px; }
+        .btn {
+            display: inline-block;
+            font-weight: 600;
+            text-align: center;
+            cursor: pointer;
+            border: 1px solid transparent;
+            padding: .5rem 1rem;
+            font-size: 1rem;
+            border-radius: 0.375rem;
+            text-decoration: none;
+            transition: all 0.2s ease-in-out;
+        }
+        .btn:hover {
+            transform: scale(1.03); /* "Joyful" grow */
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .btn-primary {
+            color: #fff;
+            background-color: #008080;
+            border-color: #008080;
+        }
+        .btn-primary:hover { background-color: #006666; }
+        .btn-danger-outline {
+            color: #dc3545;
+            border: 1px solid #dc3545;
+            background-color: transparent;
+        }
+        .btn-danger-outline:hover { color: #fff; background-color: #dc3545; }
+        .list-item { display: flex; justify-content: space-between; align-items: flex-start; padding: 1rem 0; border-bottom: 1px solid #eee; }
+        .list-item:last-child { border-bottom: none; }
+        .item-details h4 { margin: 0 0 5px 0; font-size: 1.1rem; color: #333; }
+        .item-details p { margin: 0; color: #6c757d; font-size: 0.9rem; }
+        .alert { padding: 1rem; margin-bottom: 1rem; border: 1px solid transparent; border-radius: .25rem; }
+        .alert-success { color: #0f5132; background-color: #d1e7dd; border-color: #badbcc; }
+        .alert-danger { color: #842029; background-color: #f8d7da; border-color: #f5c2c7; }
+        .alert-warning { color: #664d03; background-color: #fff3cd; border-color: #ffecb5; }
+        .progress-bar { width: 100%; background-color: #e9ecef; border-radius: 5px; height: 10px; margin-top: 5px; overflow: hidden; }
+        .progress {
+            background-color: #008080; /* THEME-TEAL */
+            height: 10px;
+            border-radius: 5px;
+            transition: width 0.6s ease; /* Animated! */
+        }
+        .all-star-box {
+            background-color: #f0fdfa;
+            border: 1px solid #99f6e4;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+        }
+        .all-star-box .fa-trophy { color: #f59e0b; font-size: 1.5rem; }
+        .profile-pic-preview { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 1px solid #dee2e6; }
+        .profile-pic-placeholder {
+            background-color: #f0fdfa;
+            color: #008080;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2rem; font-weight: bold;
+        }
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0,0,0,0.5);
+            display: none; /* Hidden by default */
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .modal-overlay:target {
+            display: flex;
+            opacity: 1;
+        }
+        .modal-box {
+            background: #fff;
+            padding: 25px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+        }
+        .modal-overlay:target .modal-box {
+            transform: scale(1);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1.25rem;
+            color: #008080;
+        }
+        .modal-header .close-btn {
+            font-size: 1.5rem;
+            color: #9ca3af;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .modal-header .close-btn:hover {
+            color: #333;
+            transform: rotate(90deg);
+        }
+    </style>
+</head>
+<body>
+
+<div style="max-width: 1200px; margin: 0 auto 20px auto;">
+    <div th:if="${successMessage}" class="alert alert-success animate-new" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="alert alert-danger animate-new" th:text="${errorMessage}"></div>
+</div>
+
+<main class="dashboard-layout">
+
+    <aside class="profile-sidebar">
+        <div class="card animate-new" style="animation-delay: 0.1s;">
+            <div class="card-body">
+
+                <div th:if="${completeness == 100}" class="all-star-box">
+                    <i class="fa-solid fa-trophy"></i>
+                    <h3 style="color: #008080; margin: 10px 0 0 0;">You're an All-Star!</h3>
+                    <p style="font-size: 0.9rem; margin: 5px 0 0 0;">Your profile is 100% complete and you'll stand out to employers.</p>
+                </div>
+
+                <div th:if="${completeness >= 70 && completeness < 100}">
+                    <h3>Profile Completeness</h3>
+                    <div class="alert alert-success" style="padding: 10px; font-size: 0.9rem;">
+                        Your profile is <strong th:text="${completeness} + '%'"></strong> complete and active!
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress" th:style="'width:' + ${completeness} + '%;'"></div>
+                    </div>
+                </div>
+
+                <div th:if="${completeness < 70}">
+                    <h3>Profile Completeness</h3>
+                    <div class="alert alert-warning" style="padding: 10px; font-size: 0.9rem;">
+                        Your profile is <strong th:text="${completeness} + '%'"></strong> complete.
+                        Reach 70% to apply for jobs.
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress" th:style="'width:' + ${completeness} + '%;'"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card animate-new" style="animation-delay: 0.2s;">
+            <div class="card-body" style="text-align: center;">
+                <img th:if="${user.profilePictureFilename != null}" th:src="@{/seeker/profile/pic/{userId}(userId=${user.id})}" alt="Profile" class="profile-pic-preview" style="width: 100px; height: 100px; margin: 0 auto 10px auto;">
+                <div th:unless="${user.profilePictureFilename != null}" class="profile-pic-preview profile-pic-placeholder" style="width: 100px; height: 100px; margin: 0 auto 10px auto; font-size: 3rem;">
+                    <span th:text="${#strings.substring(user.firstName, 0, 1)}"></span>
+                </div>
+                <h3 th:text="${user.firstName} + ' ' + ${user.lastName}" style="margin: 0 0 5px 0;"></h3>
+                <p th:text="${profile.currentTitle}" style="font-size: 0.9rem; color: #6c757d; margin: 0;">-</p>
+            </div>
+        </div>
+
+        <div class="card animate-new" style="animation-delay: 0.3s;">
+            <div class="card-body" style="padding: 10px;">
+                <h3 style="padding: 0 15px 5px 15px; font-weight: 600;">Your Profile Quest</h3>
+                <ul class="profile-nav-list">
+                    <li><a href="#personal-info">
+                        <i th:classappend="${personalInfoComplete} ? 'completed fa-solid fa-circle-check' : 'pending fa-solid fa-circle-notch'" class="icon-status"></i>
+                        Personal Info
+                    </a></li>
+                    <li><a href="#profile-picture">
+                        <i th:classappend="${picComplete} ? 'completed fa-solid fa-circle-check' : 'pending fa-solid fa-circle-notch'" class="icon-status"></i>
+                        Profile Picture
+                    </a></li>
+                    <li><a href="#professional-summary">
+                        <i th:classappend="${summaryComplete} ? 'completed fa-solid fa-circle-check' : 'pending fa-solid fa-circle-notch'" class="icon-status"></i>
+                        Professional Summary
+                    </a></li>
+                    <li><a href="#resume">
+                        <i th:classappend="${resumeComplete} ? 'completed fa-solid fa-circle-check' : 'pending fa-solid fa-circle-notch'" class="icon-status"></i>
+                        Resume
+                    </a></li>
+                    <li><a href="#work-experience">
+                        <i th:classappend="${expComplete} ? 'completed fa-solid fa-circle-check' : 'pending fa-solid fa-circle-notch'" class="icon-status"></i>
+                        Work Experience
+                    </a></li>
+                    <li><a href="#education">
+                        <i th:classappend="${eduComplete} ? 'completed fa-solid fa-circle-check' : 'pending fa-solid fa-circle-notch'" class="icon-status"></i>
+                        Education
+                    </a></li>
+                </ul>
+            </div>
+        </div>
+    </aside>
+
+    <div class="profile-content">
+        <form th:action="@{/seeker/profile/save}" th:object="${profile}" method="post" enctype="multipart/form-data">
+            <input type="hidden" name="jobId" th:if="${jobId != null}" th:value="${jobId}" />
+
+            <div class="card animate-new" id="personal-info" style="animation-delay: 0.4s;">
+                <div class="card-header">
+                    <h2><i class="fa-solid fa-user" style="color: #008080;"></i> Personal & Contact Info</h2>
+                </div>
+                <div class="card-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="fullName">Full Name</label>
+                            <input type="text" id="fullName" name="fullName" class="form-control" th:value="${user.firstName} + ' ' + ${user.lastName}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="phone">Phone Number</label>
+                            <input type="text" id="phone" name="phone" class="form-control" th:value="${user.phoneNumber}" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="city">City</label>
+                            <input type="text" id="city" th:field="*{city}" class="form-control" placeholder="e.g., New York">
+                        </div>
+                        <div class="form-group">
+                            <label for="preferredLocation">Preferred Location(s)</label>
+                            <input type="text" id="preferredLocation" th:field="*{preferredLocation}" class="form-control" placeholder="e.g., Remote, San Francisco">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card animate-new" id="profile-picture" style="animation-delay: 0.5s;">
+                <div class="card-header">
+                    <h2><i class="fa-solid fa-image" style="color: #008080;"></i> Profile Picture</h2>
+                </div>
+                <div class="card-body" style="display: flex; align-items: center; gap: 20px;">
+                    <div>
+                        <label>Current Picture</label>
+                        <img th:if="${user.profilePictureFilename != null}" th:src="@{/seeker/profile/pic/{userId}(userId=${user.id})}" alt="Profile" class="profile-pic-preview" style="width: 100px; height: 100px;">
+                        <div th:unless="${user.profilePictureFilename != null}" class="profile-pic-preview profile-pic-placeholder" style="width: 100px; height: 100px; font-size: 3rem;">
+                            <span th:text="${#strings.substring(user.firstName, 0, 1)}"></span>
+                        </div>
+                    </div>
+                    <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                        <label for="profilePictureFile">Upload New Picture (Optional)</label>
+                        <input type="file" id="profilePictureFile" name="profilePictureFile" class="form-control" accept="image/png, image/jpeg">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card animate-new" id="professional-summary" style="animation-delay: 0.6s;">
+                <div class="card-header">
+                    <h2><i class="fa-solid fa-briefcase" style="color: #008080;"></i> Professional Summary</h2>
+                </div>
+                <div class="card-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="currentTitle">Current/Desired Title</label>
+                            <input type="text" id="currentTitle" th:field="*{currentTitle}" class="form-control" placeholder="e.g., Senior Software Engineer" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="yearsExperience">Years of Experience</label>
+                            <input type="number" id="yearsExperience" th:field="*{yearsExperience}" min="0" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="profileHeadline">Profile Headline</label>
+                        <input type="text" id="profileHeadline" th:field="*{profileHeadline}" class="form-control" placeholder="e.g., Full-stack developer specializing in Spring Boot and React">
+                    </div>
+                    <div class="form-group">
+                        <label for="skills">Skills (Comma-separated)</label>
+                        <textarea id="skills" th:field="*{skills}" rows="3" class="form-control" placeholder="e.g., Java, Spring Boot, SQL, React, AWS"></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="jobType">Preferred Job Type</label>
+                            <select id="jobType" th:field="*{jobType}" class="form-select">
+                                <option value="Full-Time">Full-Time</option>
+                                <option value="Part-Time">Part-Time</option>
+                                <option value="Internship">Internship</option>
+                                <option value="Contract">Contract</option>
+                                <option value="Remote">Remote</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="expectedSalary">Expected Salary (USD, Annual)</label>
+                            <input type="number" id="expectedSalary" th:field="*{expectedSalary}" class="form-control" placeholder="e.g., 95000" step="1000">
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px;">
+                        <label for="offeringServices" style="display: flex; align-items: center; width: 100%; cursor: pointer;">
+                            <input type="checkbox" id="offeringServices" name="offeringServices" th:field="*{offeringServices}"
+                                   style="width: 1.15em; height: 1.15em; margin-right: 10px; margin-bottom: 0; cursor: pointer; color: #008080;">
+                            Make my profile public to employers who are actively searching for candidates.
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card animate-new" id="resume" style="animation-delay: 0.7s;">
+                <div class="card-header">
+                    <h2><i class="fa-solid fa-file-lines" style="color: #008080;"></i> Resume</h2>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="resumeFile">Upload New Resume (PDF/DOCX)</label>
+                        <input type="file" id="resumeFile" name="resumeFile" class="form-control" accept=".pdf,.doc,.docx">
+                        <small>Current file:
+                            <a th:if="${profile.resumeFilename}" th:href="@{/seeker/resume/view}" target="_blank" th:text="${profile.resumeFilename}" style="color: #008080; text-decoration: underline;"></a>
+                            <span th:unless="${profile.resumeFilename}">None</span>
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card animate-new" id="work-experience" style="animation-delay: 0.8s;">
+                <div class="card-header">
+                    <h2><i class="fa-solid fa-building" style="color: #008080;"></i> Work Experience</h2>
+                </div>
+                <div class="card-body">
+                    <div id="work-list-container">
+                        <div th:if="${!workExperiences.isEmpty()}">
+                            <div th:each="exp : ${workExperiences}" class="list-item" th:data-id="${exp.id}">
+                                <div class="item-details">
+                                    <h4 th:text="${exp.jobTitle}">Senior Developer</h4>
+                                    <p>
+                                        <span th:text="${exp.companyName}"></span> |
+                                        <span th:text="${exp.startDate}"></span> -
+                                        <span th:text="${exp.endDate}"></span>
+                                    </p>
+                                    <p style="white-space: pre-wrap; margin-top: 5px;" th:text="${exp.description}"></p>
+                                </div>
+                                <button type="button" th:data-id="${exp.id}"
+                                        class="btn btn-danger-outline delete-exp-btn" style="font-size: 0.8rem; padding: .25rem .5rem;">
+                                    Remove
+                                </button>
+                            </div>
+                        </div>
+                        <p th:if="${workExperiences.isEmpty()}" style="margin-bottom: 20px;" id="no-work-msg">
+                            You have not added any work experience yet.
+                        </p>
+                    </div>
+                    <a href="#add-work-modal" class="btn btn-primary" style="margin-top: 15px;">
+                        <i class="fa-solid fa-plus"></i> Add Work Experience
+                    </a>
+                </div>
+            </div>
+
+            <div class="card animate-new" id="education" style="animation-delay: 0.9s;">
+                <div class="card-header">
+                    <h2><i class="fa-solid fa-graduation-cap" style="color: #008080;"></i> Education</h2>
+                </div>
+                <div class="card-body">
+                    <div id="edu-list-container">
+                        <div th:if="${!educationHistory.isEmpty()}">
+                            <div th:each="edu : ${educationHistory}" class="list-item" th:data-id="${edu.id}">
+                                <div class="item-details">
+                                    <h4 th:text="${edudegree}">Bachelor of Science</h4>
+                                    <p>
+                                        <span th:text="${edu.institutionName}"></span> |
+                                        <span th:text="${edu.startYear}"></span> -
+                                        <span th:text="${edu.endYear}"></span>
+                                    </p>
+                                    <p style="margin-top: 5px;" th:text="${edu.fieldOfStudy}"></p>
+                                </div>
+                                <button type="button" th:data-id="${edu.id}"
+                                        class="btn btn-danger-outline delete-edu-btn" style="font-size: 0.8rem; padding: .25rem .5rem;">
+                                    Remove
+                                </button>
+                            </div>
+                        </div>
+                        <p th:if="${educationHistory.isEmpty()}" style="margin-bottom: 20px;" id="no-edu-msg">
+                            You have not added any education history yet.
+                        </p>
+                    </div>
+                    <a href="#add-edu-modal" class="btn btn-primary" style="margin-top: 15px;">
+                        <i class="fa-solid fa-plus"></i> Add Education
+                    </a>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="font-size: 1.2rem; padding: 12px 20px; width: 100%; margin-top: 10px;">
+                <i class="fa-solid fa-save"></i> Save All Profile Changes
+            </button>
+        </form>
+    </div>
+</main>
+
+
+<div id="add-work-modal" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3>Add Work Experience</h3>
+            <a href="#" class="close-btn" aria-label="Close modal">&times;</a>
+        </div>
+        <form id="add-work-form"> <div class="form-row">
+            <div class="form-group">
+                <label for="newExpJobTitle">Job Title</label>
+                <input type="text" id="newExpJobTitle" name="newExpJobTitle" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="newExpCompanyName">Company Name</label>
+                <input type="text" id="newExpCompanyName" name="newExpCompanyName" class="form-control" required>
+            </div>
+        </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="newExpStartDate">Start Date</label>
+                    <input type="date" id="newExpStartDate" name="newExpStartDate" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="newExpEndDateStr">End Date (Leave blank if current)</label>
+                    <input type="date" id="newExpEndDateStr" name="newExpEndDateStr" class="form-control">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="newExpDesc">Description (Optional)</label>
+                <textarea id="newExpDesc" name="newExpDesc" rows="3" class="form-control"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Save Work Experience</button>
+        </form>
+    </div>
+</div>
+
+<div id="add-edu-modal" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3>Add Education</h3>
+            <a href="#" class="close-btn" aria-label="Close modal">&times;</a>
+        </div>
+        <form id="add-edu-form"> <div class="form-row">
+            <div class="form-group">
+                <label for="newEduInstitution">Institution Name</label>
+                <input type="text" id="newEduInstitution" name="newEduInstitution" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="newEduDegree">Degree</label>
+                <input type="text" id="newEduDegree" name="newEduDegree" class="form-control" placeholder="e.g., Bachelor of Science" required>
+            </div>
+        </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="newEduField">Field of Study</label>
+                    <input type="text" id="newEduField" name="newEduField" class="form-control" placeholder="e.g., Computer Science" required>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="newEduStartYear">Start Year</label>
+                    <input type="number" id="newEduStartYear" name="newEduStartYear" class="form-control" placeholder="e.g., 2018" min="1900" max="2100" required>
+                </div>
+                <div class="form-group">
+                    <label for="newEduEndYear">End Year</label>
+                    <input type="number" id="newEduEndYear" name="newEduEndYear" class="form-control" placeholder="e.g., 2022" min="1900" max="2100" required>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Save Education</button>
+        </form>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- 1. CONFIGURATION ---
+        const csrfTokenEl = document.querySelector('meta[name="_csrf"]');
+        const csrfHeaderEl = document.querySelector('meta[name="_csrf_header"]');
+
+        // Gracefully handle missing CSRF tokens
+        const csrfToken = csrfTokenEl ? csrfTokenEl.content : null;
+        const csrfHeader = csrfHeaderEl ? csrfHeaderEl.content : null;
+
+        if (!csrfToken || !csrfHeader) {
+            console.error('CSRF tokens not found. AJAX operations will fail.');
+        }
+
+        const workListContainer = document.getElementById('work-list-container');
+        const eduListContainer = document.getElementById('edu-list-container');
+        const profileCompBar = document.querySelector('.progress');
+
+        // Function to show notifications
+        function showNotification(message, type = 'success') {
+            const container = document.querySelector('main.dashboard-layout').parentElement;
+
+            // Remove any existing alerts first
+            const existingAlert = container.querySelector('.alert');
+            if(existingAlert) existingAlert.remove();
+
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type} animate-new`;
+            notification.innerHTML = message;
+
+            // Insert before the main layout
+            container.insertAdjacentElement('beforebegin', notification);
+
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+
+        // --- 2. RENDERING FUNCTIONS ---
+        function renderNewItemHtml(type, data, newId) {
+            if (type === 'experience') {
+                return `
+                    <div class="list-item" data-id="${newId}">
+                        <div class="item-details">
+                            <h4>${data.jobTitle}</h4> <p>${data.companyName} | ${data.startDate} - ${data.endDate || 'Current'}</p>
+                            <p style="white-space: pre-wrap; margin-top: 5px;">${data.description}</p>
+                        </div>
+                        <button type="button" class="btn btn-danger-outline delete-exp-btn" style="font-size: 0.8rem; padding: .25rem .5rem;" data-id="${newId}">
+                            Remove
+                        </button>
+                    </div>
+                `;
+            } else if (type === 'education') {
+                return `
+                    <div class="list-item" data-id="${newId}">
+                        <div class="item-details">
+                            <h4>${data.degree} in ${data.fieldOfStudy}</h4>
+                            <p>${data.institutionName} | ${data.startYear} - ${data.endYear || 'Present'}</p>
+                        </div>
+                        <button type="button" class="btn btn-danger-outline delete-edu-btn" style="font-size: 0.8rem; padding: .25rem .5rem;" data-id="${newId}">
+                            Remove
+                        </button>
+                    </div>
+                `;
+            }
+            return '';
+        }
+
+        function updateCompleteness(score) {
+            const compText = document.querySelector('.alert-warning strong, .alert-success strong');
+            if (compText) compText.textContent = `${score}%`;
+            if (profileCompBar) profileCompBar.style.width = `${score}%`;
+
+            // Check if we just crossed the threshold
+            const warningAlert = document.querySelector('.alert-warning');
+            if (score >= 70 && warningAlert) {
+                // Reload the page to show the "Success" state and update "Quest Log"
+                location.reload();
+            }
+        }
+
+        // --- 3. AJAX CORE LOGIC (ADD/DELETE) ---
+        async function handleAjaxAdd(type, modalId) {
+            const isExp = type === 'experience';
+            const endpoint = isExp ? '/seeker/api/experience/add' : '/seeker/api/education/add';
+            const form = document.querySelector(`#${modalId} form`);
+
+            const data = {};
+            const formData = new FormData(form);
+            formData.forEach((value, key) => { data[key] = value; });
+
+            // Reformat data keys to match Controller's static class fields
+            const payload = isExp ? {
+                jobTitle: data.newExpJobTitle,
+                companyName: data.newExpCompanyName,
+                description: data.newExpDesc,
+                startDate: data.newExpStartDate,
+                endDate: data.newExpEndDateStr || 'Current'
+            } : {
+                institutionName: data.newEduInstitution,
+                degree: data.newEduDegree,
+                fieldOfStudy: data.newEduField,
+                startYear: parseInt(data.newEduStartYear),
+                endYear: parseInt(data.newEduEndYear)
+            };
+
+            // Basic validation
+            if (!payload[isExp ? 'jobTitle' : 'institutionName']) {
+                showNotification('Please fill out required fields.', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        [csrfHeader]: csrfToken
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.status === 'success') {
+                    showNotification(result.message, 'success');
+
+                    const container = isExp ? workListContainer : eduListContainer;
+
+                    // Remove the 'No experience yet' message
+                    const emptyMsg = container.querySelector(isExp ? '#no-work-msg' : '#no-edu-msg');
+                    if (emptyMsg) emptyMsg.remove();
+
+                    // Prepend new item
+                    container.insertAdjacentHTML('afterbegin', renderNewItemHtml(type, payload, result.newId));
+
+                    updateCompleteness(result.completeness);
+                    window.location.hash = '#'; // Close modal
+                    form.reset();
+
+                } else {
+                    showNotification(result.message || 'Failed to add item.', 'error');
+                }
+            } catch (error) {
+                showNotification('Network error during save.', 'error');
+                console.error('AJAX Error:', error);
+            }
+        }
+
+        async function handleAjaxDelete(type, id, deleteButton) {
+            const endpoint = `/seeker/api/${type}/delete/${id}`;
+            const listItem = deleteButton.closest('.list-item');
+
+            if (!confirm('Are you sure you want to delete this entry?')) return;
+
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'DELETE',
+                    headers: { [csrfHeader]: csrfToken }
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.status === 'success') {
+                    showNotification(result.message, 'success');
+                    if (listItem) {
+                        listItem.remove();
+                    }
+                    updateCompleteness(result.completeness);
+                } else {
+                    showNotification(result.message || 'Failed to delete item.', 'error');
+                }
+            } catch (error) {
+                showNotification('Network error during deletion.', 'error');
+                console.error('AJAX Error:', error);
+            }
+        }
+
+        // --- 4. ATTACH EVENT LISTENERS ---
+
+        // Modal Forms
+        const workModalForm = document.getElementById('add-work-form');
+        const eduModalForm = document.getElementById('add-edu-form');
+
+        if (workModalForm) {
+            workModalForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                handleAjaxAdd('experience', 'add-work-modal');
+            });
+        }
+        if (eduModalForm) {
+            eduModalForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                handleAjaxAdd('education', 'add-edu-modal');
+            });
+        }
+
+        // Deletion Buttons (using event delegation)
+        document.body.addEventListener('click', function(e) {
+            // Target the 'delete-exp-btn'
+            const deleteExpBtn = e.target.closest('.delete-exp-btn');
+            if (deleteExpBtn) {
+                e.preventDefault();
+                const expId = deleteExpBtn.getAttribute('data-id');
+                handleAjaxDelete('experience', expId, deleteExpBtn);
+                return;
+            }
+
+            // Target the 'delete-edu-btn'
+            const deleteEduBtn = e.target.closest('.delete-edu-btn');
+            if (deleteEduBtn) {
+                e.preventDefault();
+                const eduId = deleteEduBtn.getAttribute('data-id');
+                handleAjaxDelete('education', eduId, deleteEduBtn);
+                return;
+            }
+        });
+    });
+</script>
+
+
+</body>
+</html>

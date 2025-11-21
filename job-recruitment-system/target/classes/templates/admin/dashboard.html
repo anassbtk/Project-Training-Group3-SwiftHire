@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard - SwiftHire</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" th:href="@{/images/nav.png}">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        // --- Tailwind Config (using your correct 'theme-teal' color) ---
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'sans-serif']
+                    },
+                    colors: {
+                        'theme-teal': {
+                            DEFAULT: '#008080', // Logo-matched teal
+                            '500': '#008080',
+                            '600': '#006666', // A darker shade
+                        },
+                        // New dark theme colors
+                        'gray': {
+                            ...tailwind.theme.colors.gray,
+                            '800': '#1f2937',
+                            '900': '#111827',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Apply the custom font */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827; /* bg-gray-900 */
+        }
+
+        /* --- NEW: Admin Loader --- */
+        #loader-wrapper {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            background: #111827; /* Dark background */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.5s ease-out;
+        }
+        #loader-content {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .loader-icon {
+            color: #008080; /* theme-teal */
+            font-size: 120px;
+            animation: pulse-shield 1.5s ease-in-out infinite;
+        }
+        @keyframes pulse-shield {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+            50% {
+                transform: scale(1.1);
+                opacity: 1;
+            }
+        }
+        /* --- END NEW LOADER --- */
+
+        /* --- Modern Animation --- */
+        @keyframes fade-in-scale-up {
+            from { opacity: 0; transform: scale(0.98) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .animate-new {
+            animation: fade-in-scale-up 0.5s ease-out forwards;
+            opacity: 0;
+        }
+
+        /* Main content hidden until loader is done */
+        #main-content {
+            display: none;
+            opacity: 0;
+            animation: fade-in-scale-up 0.5s 0.2s ease-out forwards;
+        }
+
+        /* Sidebar styles */
+        .sidebar {
+            background-color: #1f2937; /* bg-gray-800 */
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        .sidebar::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</head>
+<body class="font-['Inter',_sans-serif]">
+
+<div id="loader-wrapper">
+    <div id="loader-content">
+        <i class="fa-solid fa-user-shield loader-icon"></i>
+    </div>
+</div>
+
+<div id="main-content" class="flex min-h-screen bg-gray-900 text-gray-300">
+
+    <div class="sidebar fixed top-0 left-0 h-full w-64 z-30 flex flex-col p-4 overflow-y-auto">
+        <a th:href="@{/admin/dashboard}" class="p-2 mb-6 flex items-center justify-center">
+            <img th:src="@{/images/logo-white.png}" alt="SwiftHire Logo" class="h-32 w-auto transform hover:scale-105 transition-transform duration-300">
+        </a>
+
+        <div class="flex flex-col items-center justify-center p-4 mb-6 bg-teal-500/10 border border-teal-500/20 rounded-lg">
+            <div class="w-16 h-16 bg-theme-teal flex items-center justify-center rounded-full mb-2">
+                <i class="fa-solid fa-user-shield text-white text-3xl"></i>
+            </div>
+            <p class="text-sm font-semibold mt-1 text-white">Admin</p>
+            <p class="text-xs text-gray-400">System Administrator</p>
+        </div>
+
+        <nav class="flex-1 space-y-2">
+            <p class="text-xs uppercase font-semibold text-gray-500 ml-3 mb-2">Management</p>
+
+            <a th:href="@{/admin/dashboard}"
+               class="nav-link flex items-center space-x-3 p-3 rounded-lg transition duration-150 font-medium bg-theme-teal text-white shadow-sm">
+                <i class="fa-solid fa-fw fa-home w-6 text-center text-lg"></i>
+                <span>Dashboard</span>
+            </a>
+
+            <a th:href="@{/admin/users}"
+               class="nav-link flex items-center space-x-3 p-3 rounded-lg transition duration-150 font-medium text-gray-400 hover:bg-gray-700 hover:text-white">
+                <i class="fa-solid fa-fw fa-users-cog w-6 text-center text-lg"></i>
+                <span>User Management</span>
+            </a>
+
+            <a th:href="@{/admin/support}"
+               class="nav-link flex items-center justify-between p-3 rounded-lg transition duration-150 font-medium text-gray-400 hover:bg-gray-700 hover:text-white">
+                <div class="flex items-center space-x-3">
+                    <i class="fa-solid fa-fw fa-headset w-6 text-center text-lg"></i>
+                    <span>Support Inbox</span>
+                </div>
+            </a>
+        </nav>
+
+        <div class="mt-auto pt-4 border-t border-gray-700 space-y-2">
+            <a th:href="@{/}" class="flex items-center space-x-3 p-3 rounded-lg transition duration-150 font-medium text-gray-400 hover:bg-gray-700 hover:text-white">
+                <i class="fa-solid fa-fw fa-globe w-6 text-center text-lg"></i>
+                <span>Public Home Page</span>
+            </a>
+            <form th:action="@{/logout}" method="post" class="w-full">
+                <button type="submit"
+                        class="flex items-center space-x-3 p-3 rounded-lg transition duration-150 font-medium text-red-500 hover:bg-red-700 hover:text-white w-full text-left">
+                    <i class="fa-solid fa-fw fa-arrow-right-from-bracket w-6 text-center text-lg"></i>
+                    <span>Logout</span>
+                </button>
+            </form>
+        </div>
+    </div>
+    <div class="w-full flex-1 flex flex-col" style="padding-left: 16rem;"> <header class="main-header flex items-center justify-between p-6 bg-gray-800 border-b border-gray-700">
+        <h1 class="text-2xl font-bold text-white">Admin Dashboard</h1>
+
+        <div class="w-full max-w-md">
+            <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                        <i class="fa-solid fa-search text-gray-500"></i>
+                    </span>
+                <input type="text" placeholder="Search jobs, users..."
+                       class="w-full pl-10 pr-4 py-2 rounded-lg bg-gray-700 border border-gray-600 text-gray-300 focus:outline-none focus:ring-2 focus:ring-theme-teal focus:border-theme-teal">
+            </div>
+        </div>
+    </header>
+
+        <main class="flex-1 p-6 overflow-y-auto">
+
+            <div th:if="${successMessage}" class="animate-new mb-6 rounded-md bg-green-900 p-4 border border-green-700">
+                <p class="text-sm font-medium text-green-200" th:text="${successMessage}">Success!</p>
+            </div>
+            <div th:if="${errorMessage}" class="animate-new mb-6 rounded-md bg-red-900 p-4 border border-red-700">
+                <p class="text-sm font-medium text-red-200" th:text="${errorMessage}">Error!</p>
+            </div>
+
+            <section class="mb-8 animate-new" style="animation-delay: 0.1s;">
+                <h2 class="text-xl font-semibold text-white mb-4">Platform Overview</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+                    <div class="bg-gray-800 p-6 rounded-lg shadow-lg border border-gray-700">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-sm font-medium text-gray-400">Total Users</h3>
+                                <p class="text-3xl font-bold text-white" th:text="${totalUserCount ?: '0'}">0</p>
+                            </div>
+                            <div class="w-12 h-12 flex items-center justify-center bg-gray-700 rounded-full">
+                                <i class="fa-solid fa-users text-theme-teal text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-800 p-6 rounded-lg shadow-lg border border-gray-700">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-sm font-medium text-gray-400">Total Jobs Posted</h3>
+                                <p class="text-3xl font-bold text-white" th:text="${activeJobs.size() + pendingJobs.size()}">0</p>
+                            </div>
+                            <div class="w-12 h-12 flex items-center justify-center bg-gray-700 rounded-full">
+                                <i class="fa-solid fa-briefcase text-theme-teal text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-800 p-6 rounded-lg shadow-lg border border-gray-700">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-sm font-medium text-gray-400">Active Jobs</h3>
+                                <p class="text-3xl font-bold text-green-500" th:text="${activeJobs.size()}">0</p>
+                            </div>
+                            <div class="w-12 h-12 flex items-center justify-center bg-gray-700 rounded-full">
+                                <i class="fa-solid fa-check-circle text-green-500 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-800 p-6 rounded-lg shadow-lg border border-gray-700">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-sm font-medium text-gray-400">Pending Approval</h3>
+                                <p class="text-3xl font-bold text-yellow-500" th:text="${pendingJobs.size()}">0</p>
+                            </div>
+                            <div class="w-12 h-12 flex items-center justify-center bg-gray-700 rounded-full">
+                                <i class="fa-solid fa-clock text-yellow-500 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-800 p-6 rounded-lg shadow-lg border border-gray-700">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-sm font-medium text-gray-400">Monthly Apps</h3>
+                                <p class="text-3xl font-bold text-blue-400" th:text="${monthlyStats.applicationsThisMonth ?: '0'}">0</p>
+                            </div>
+                            <div class="w-12 h-12 flex items-center justify-center bg-gray-700 rounded-full">
+                                <i class="fa-solid fa-paper-plane text-blue-400 text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="mb-8 grid grid-cols-1 lg:grid-cols-5 gap-6 animate-new" style="animation-delay: 0.2s;">
+                <div class="lg:col-span-2 bg-gray-800 p-6 rounded-lg shadow-lg border border-gray-700">
+                    <h3 class="text-lg font-semibold text-white mb-4">Users by Role</h3>
+                    <div class="h-64">
+                        <canvas id="userRoleChart"></canvas>
+                    </div>
+                </div>
+                <div class="lg:col-span-3 bg-gray-800 p-6 rounded-lg shadow-lg border border-gray-700">
+                    <h3 class="text-lg font-semibold text-white mb-4">Weekly Platform Activity</h3>
+                    <div class="h-64">
+                        <canvas id="weeklyActivityChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                <div class="animate-new" style="animation-delay: 0.3s;">
+                    <h2 class="text-xl font-semibold text-white mb-4">Job Approval Queue</h2>
+                    <div class="bg-gray-800 shadow-lg border border-gray-700 rounded-lg overflow-hidden">
+                        <table class="min-w-full divide-y divide-gray-700">
+                            <thead class="bg-gray-700">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Title</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Company</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Actions</th>
+                            </tr>
+                            </thead>
+                            <tbody class="bg-gray-800 divide-y divide-gray-700">
+                            <tr th:each="job : ${pendingJobs}" class="hover:bg-gray-700">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300" th:text="${job.title}"></td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400" th:text="${job.postedBy.companyName}"></td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-3">
+                                    <a th:href="@{/admin/approve/{id}(id=${job.id})}" class="text-green-500 hover:text-green-400"><i class="fa-solid fa-check"></i> Approve</a>
+                                    <a th:href="@{/admin/job/edit/{id}(id=${job.id})}" class="text-theme-teal hover:text-teal-400"><i class="fa-solid fa-pen"></i></a>
+                                    <a th:href="@{/admin/delete/{id}(id=${job.id})}" class="text-red-500 hover:text-red-400"><i class="fa-solid fa-trash"></i></a>
+                                </td>
+                            </tr>
+                            <tr th:if="${pendingJobs.isEmpty()}">
+                                <td colspan="3" class="px-6 py-12 text-center text-gray-400">
+                                    No jobs currently require approval.
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="animate-new" style="animation-delay: 0.4s;">
+                    <h2 class="text-xl font-semibold text-white mb-4">Active Job Feed</h2>
+                    <div class="bg-gray-800 shadow-lg border border-gray-700 rounded-lg overflow-hidden">
+                        <div class="max-h-[400px] overflow-y-auto divide-y divide-gray-700">
+                            <div th:each="job : ${activeJobs}" class="p-4 hover:bg-gray-700">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <p class="text-sm font-medium text-white" th:text="${job.title}">Senior Developer</p>
+                                        <p class="text-xs text-gray-400" th:text="${job.postedBy.companyName} + ' - ' + ${job.locationCity}">Tech Corp - New York</p>
+                                    </div>
+                                    <div class="space-x-3">
+                                        <a th:href="@{/admin/job/edit/{id}(id=${job.id})}" class="text-theme-teal hover:text-teal-400"><i class="fa-solid fa-pen"></i></a>
+                                        <a th:href="@{/admin/delete/{id}(id=${job.id})}" class="text-red-500 hover:text-red-400"><i class="fa-solid fa-trash"></i></a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div th:if="${activeJobs.isEmpty()}" class="p-12 text-center text-gray-400">
+                                No jobs are currently active.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+
+        </main>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    // REAL DATA for User Role Chart (Thymeleaf binding from controller)
+    const userRoleData = /*[[${userRoleCounts}]]*/ {};
+
+    // Placeholder data for Weekly Activity Line Chart
+    const userActivityData = {
+        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        logins: [120, 150, 180, 170, 210, 250, 230], // Placeholder logins
+        applications: [30, 40, 35, 50, 55, 60, 58]  // Placeholder applications
+    };
+    /*]]>*/
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Handle the loader
+        const loader = document.getElementById('loader-wrapper');
+        const mainContent = document.getElementById('main-content');
+
+        // Set a timer to hide the loader and show the content
+        setTimeout(function() {
+            loader.style.opacity = '0';
+            loader.style.pointerEvents = 'none'; // Make it unclickable
+            mainContent.style.display = 'flex'; // Use flex for the layout
+
+            // After loader fades out, remove it from the DOM
+            setTimeout(() => {
+                loader.remove();
+            }, 500); // Wait for fade-out transition
+
+        }, 2000); // Loader time
+
+        // --- Chart.js Logic (with dark mode text) ---
+        const chartTextColor = '#9ca3af'; // text-gray-400
+        Chart.defaults.color = chartTextColor; // Global text color
+
+        // Helper function to safely get role counts
+        const getRoleCount = (roleName) => userRoleData[roleName] || 0;
+
+        // 1. User Role Chart (Doughnut)
+        const userCtx = document.getElementById('userRoleChart');
+        if (userCtx) {
+            new Chart(userCtx.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Job Seekers', 'Employers', 'Admins'],
+                    datasets: [{
+                        label: 'User Roles',
+                        data: [
+                            getRoleCount('JOB_SEEKER'),
+                            getRoleCount('EMPLOYER'),
+                            getRoleCount('ADMIN')
+                        ],
+                        backgroundColor: [
+                            '#008080', // theme-teal
+                            '#006666', // theme-teal-600
+                            '#eab308'  // yellow-500
+                        ],
+                        borderColor: '#1f2937', // bg-gray-800
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: chartTextColor // Set legend text color
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 2. Weekly Activity Line Chart (Replaces Monthly Growth Chart)
+        const weeklyCtx = document.getElementById('weeklyActivityChart');
+        if (weeklyCtx) {
+            new Chart(weeklyCtx.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: userActivityData.labels,
+                    datasets: [
+                        {
+                            label: 'User Logins',
+                            data: userActivityData.logins,
+                            borderColor: '#3b82f6', // blue-500
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Applications Submitted',
+                            data: userActivityData.applications,
+                            borderColor: '#eab308', // yellow-500
+                            backgroundColor: 'rgba(234, 179, 8, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: chartTextColor,
+                                precision: 0
+                            },
+                            grid: { color: '#374151' } // gridline color
+                        },
+                        x: {
+                            ticks: { color: chartTextColor }, // X-axis text color
+                            grid: { display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                color: chartTextColor
+                            }
+                        },
+                        title: {
+                            display: false,
+                        }
+                    }
+                }
+            });
+        }
+    });
+</script>
+
+</body>
+</html>

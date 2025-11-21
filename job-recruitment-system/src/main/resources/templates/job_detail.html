@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${job.title} + ' - Job Details | SwiftHire'"></title>
+
+    <link rel="icon" type="image/png" th:href="@{/images/nav.png}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'sans-serif']
+                    },
+                    colors: {
+                        teal: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            500: '#008080',
+                            600: '#008080',
+                            700: '#006666',
+                            800: '#004d4d',
+                            900: '#003333',
+                        },
+                        // Enhanced "Rich Metallic" Gold Palette
+                        'gold': {
+                            light: '#FCD34D',
+                            DEFAULT: '#F59E0B', // Amber 500
+                            dark: '#B45309',    // Amber 700
+                        },
+                        'neutral-light': '#fefefe',
+                        'neutral-dark': '#333333',
+                    },
+                    boxShadow: {
+                        'soft': '0 10px 30px rgba(0, 0, 0, 0.08)',
+                        'gold-glow': '0 4px 14px 0 rgba(245, 158, 11, 0.39)', // Custom Gold Glow
+                    },
+                    animation: {
+                        'spin-slow': 'spin 3s linear infinite',
+                        'fade-in': 'fadeIn 0.5s ease-out forwards',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            --teal: #008080;
+            --teal-light: #e6f7f7;
+            --card-radius: 1.5rem;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f4f6f8;
+            margin: 0;
+            line-height: 1.6;
+            color: #333333;
+        }
+
+        /* --- Modern Card --- */
+        .modern-card {
+            background: var(--neutral-light, white);
+            padding: 30px;
+            border-radius: var(--card-radius);
+            margin-bottom: 25px;
+            border: 1px solid #eef1f4;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .modern-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0, 128, 128, 0.1);
+        }
+
+        .modern-card h3 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--neutral-dark);
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--teal-light);
+            padding-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+
+        .modern-card h3 i {
+            color: var(--teal);
+            font-size: 1.1em;
+            margin-right: 12px;
+        }
+
+        .main-wrapper {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 30px 40px;
+        }
+
+        /* Navigation Pill */
+        .nav-pill-wrapper {
+            margin-bottom: 25px;
+            padding-top: 30px;
+        }
+        .nav-pill {
+            background-color: white;
+            border: 1px solid #d1d5db;
+            color: #4b5563;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+        .nav-pill:hover {
+            background-color: var(--teal);
+            color: white;
+            border-color: var(--teal);
+            box-shadow: 0 4px 10px rgba(0, 128, 128, 0.3);
+        }
+
+        /* Layout Grid */
+        .content-layout {
+            display: grid;
+            grid-template-columns: 3fr 1.5fr;
+            gap: 30px;
+        }
+        .right-column {
+            position: sticky;
+            top: 30px;
+            height: fit-content;
+        }
+
+        /* Job Hero Header */
+        .job-hero {
+            background: linear-gradient(10deg, #ffffff, var(--teal-light));
+            padding: 40px 30px;
+            border-radius: var(--card-radius);
+            margin-bottom: 30px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .logo-box {
+            height: 100px;
+            width: 100px;
+            min-width: 100px;
+            border-radius: 50%;
+            border: 4px solid var(--teal);
+            background-color: white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .logo-placeholder {
+            font-weight: 900;
+            font-size: 3rem;
+            color: var(--teal);
+        }
+        .title-group h2 { font-size: 2.8rem; margin: 0 0 10px 0; font-weight: 900; color: #1f2937; }
+        .title-group .meta {
+            color: #6c757d;
+            font-size: 1.05rem;
+            gap: 30px;
+        }
+
+        /* Detail Rows */
+        .detail-row {
+            padding: 15px 0;
+            border-bottom: 1px solid #f0f4f7;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .detail-row:last-child { border-bottom: none; padding-bottom: 0; }
+        .detail-row i { color: var(--teal); width: 28px; text-align: left; margin-right: 12px; }
+        .detail-row strong { font-weight: 600; color: #555; flex-grow: 1; }
+
+        /* Skill Badges */
+        .skill-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 15px;
+            padding: 0;
+            list-style: none;
+        }
+        .skill-badge {
+            background: var(--teal-light);
+            color: var(--teal);
+            border: 1px solid var(--teal);
+            padding: 8px 18px;
+            border-radius: 9999px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+            cursor: default;
+        }
+        .skill-badge:hover {
+            background: var(--teal);
+            color: white;
+            transform: scale(1.02);
+            box-shadow: 0 4px 10px rgba(0, 128, 128, 0.2);
+        }
+
+        /* Alerts & Buttons */
+        .alert-message-box, .apply-status-message {
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 0.95em;
+            text-align: center;
+            margin-bottom: 20px;
+            border: 1px solid;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .apply-btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 16px;
+            font-size: 1.1em;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            font-weight: 700;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary-themed {
+            background-color: var(--teal);
+            color: white;
+        }
+        .btn-primary-themed:hover {
+            background-color: #006666;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 128, 128, 0.4);
+        }
+
+        /* --- UPDATED PREMIUM STYLES (RICH GOLD) --- */
+        .bg-gold-gradient {
+            /* Gradient: Amber-500 to Amber-700 */
+            background: linear-gradient(135deg, #F59E0B 0%, #B45309 100%);
+            color: white;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .score-circle {
+            width: 90px; height: 90px;
+            border-radius: 50%;
+            /* Conic gradient for score progress */
+            background: conic-gradient(#F59E0B var(--percent), #e5e7eb 0);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .score-circle::after {
+            content: attr(data-score);
+            position: absolute;
+            background: white;
+            width: 72px; height: 72px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: 1.4rem;
+            color: #B45309; /* Dark Amber Text */
+        }
+
+        /* Loading Animation Line */
+        .scanning-line {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to bottom, transparent, rgba(245, 158, 11, 0.1), transparent);
+            animation: scan 2s linear infinite;
+            pointer-events: none;
+        }
+        @keyframes scan {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100%); }
+        }
+
+        @media (max-width: 1100px) {
+            .content-layout {
+                grid-template-columns: 1fr;
+            }
+            .right-column {
+                position: static;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="main-wrapper">
+
+    <div class="nav-pill-wrapper">
+        <a th:href="@{/jobs/hub}" class="nav-pill inline-flex items-center px-5 py-2.5 rounded-full text-base no-underline">
+            <i class="fa-solid fa-arrow-left mr-3"></i>Back to Job Search Hub
+        </a>
+    </div>
+
+    <div class="job-hero">
+        <div class="flex items-center gap-6 md:gap-8">
+            <div class="logo-box flex items-center justify-center">
+                <img th:if="${job.postedBy?.companyLogoFilename != null}"
+                     th:src="@{/employer/logos/download/{filename}(filename=${job.postedBy?.companyLogoFilename})}"
+                     alt="Company Logo" class="object-contain p-3 w-full h-full">
+                <div th:unless="${job.postedBy?.companyLogoFilename != null}" class="logo-placeholder">
+                    <span th:text="${job.postedBy.companyName != null ? #strings.substring(job.postedBy.companyName, 0, 1) : 'C'}">C</span>
+                </div>
+            </div>
+            <div class="title-group flex-1">
+                <h2 th:text="${job.title}" class="text-gray-900 leading-tight">Job Title</h2>
+                <div class="meta flex flex-wrap items-center mt-3 text-lg font-medium">
+                    <span class="flex items-center mr-6">
+                        <i class="fa-solid fa-building mr-2 text-teal-600"></i>
+                        <span th:text="${job.postedBy.companyName}" class="text-gray-600">Company</span>
+                    </span>
+                    <span class="flex items-center mr-6">
+                        <i class="fa-solid fa-location-dot mr-2 text-teal-600"></i>
+                        <span th:text="${job.locationCity} + (${job.locationCountry != null ? ', ' + job.locationCountry : ''})" class="text-gray-600">Location</span>
+                    </span>
+                    <span class="flex items-center" th:if="${job.salaryMin != null}">
+                        <i class="fa-solid fa-sack-dollar mr-2 text-teal-600"></i>
+                        <span th:text="'$' + ${#numbers.formatDecimal(job.salaryMin, 0, 'COMMA', 0, 'POINT')} + ' - $' + ${#numbers.formatDecimal(job.salaryMax, 0, 'COMMA', 0, 'POINT')}" class="text-gray-600 font-bold">Salary</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="content-layout">
+
+        <div class="left-column">
+
+            <div th:if="${isAuthenticated and isJobSeeker}" class="modern-card job-content-section relative overflow-hidden" id="ai-section">
+                <h3><i class="fa-solid fa-wand-magic-sparkles"></i> AI Candidate Match</h3>
+
+                <div th:if="${isPremium}" id="match-start-view" class="text-center py-6">
+                    <div class="mb-4 text-gray-600">Check how well your profile matches this job description using AI.</div>
+                    <button onclick="calculateMatch()" class="inline-flex items-center px-6 py-3 bg-gold-gradient text-white rounded-xl font-bold shadow-gold-glow hover:scale-105 transition-transform cursor-pointer border-none">
+                        <i class="fa-solid fa-fingerprint mr-2"></i> Calculate Match Score
+                    </button>
+                </div>
+
+                <div id="match-loading-view" class="hidden text-center py-8 relative">
+                    <div class="scanning-line"></div>
+                    <div class="w-16 h-16 border-4 border-gray-200 border-t-amber-500 rounded-full animate-spin mx-auto mb-4"></div>
+                    <h4 class="font-bold text-gray-800 animate-pulse">Analyzing Profile...</h4>
+                    <p class="text-sm text-gray-500">Comparing skills, experience, and requirements.</p>
+                </div>
+
+                <div id="match-result-view" class="hidden flex flex-col md:flex-row items-center gap-6 mt-4 animate-fade-in">
+                    <div class="flex-shrink-0">
+                        <div id="score-circle" class="score-circle" style="--percent: 0%" data-score="0"></div>
+                    </div>
+                    <div class="flex-1">
+                        <p id="match-level-text" class="font-bold text-gray-800 text-lg">Match Level</p>
+                        <p id="match-reasoning" class="text-gray-600 text-sm mt-1">Reasoning...</p>
+
+                        <div id="missing-keywords-container" class="mt-3 hidden">
+                            <p class="text-xs font-semibold text-gray-500 uppercase mb-1">Missing Keywords:</p>
+                            <div id="keywords-list" class="flex flex-wrap gap-2">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div th:if="${!isPremium}" class="mt-4 text-center py-8 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+                    <div class="w-14 h-14 bg-gold-gradient text-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                        <i class="fa-solid fa-lock text-2xl"></i>
+                    </div>
+                    <h4 class="font-bold text-gray-900 text-lg">Unlock Your Match Score</h4>
+                    <p class="text-sm text-gray-600 mb-6 max-w-md mx-auto leading-relaxed">See how well your profile matches this job description and get specific AI-powered tips to improve your application.</p>
+                    <a th:href="@{/premium}" class="inline-block px-6 py-3 bg-gold-gradient text-white font-bold rounded-lg shadow-gold-glow hover:scale-105 transition-transform no-underline">
+                        <i class="fa-solid fa-crown mr-2"></i> Upgrade to Premium
+                    </a>
+                </div>
+            </div>
+            <div class="modern-card job-content-section">
+                <h3><i class="fa-solid fa-file-lines"></i>Job Description</h3>
+                <div th:utext="${#strings.replace(#strings.defaultString(job.description, 'No detailed job description provided.'), '\n', '<br>')}" class="mt-4 text-gray-700 leading-relaxed">
+                </div>
+            </div>
+
+            <div class="modern-card job-content-section">
+                <h3><i class="fa-solid fa-flask"></i>Required Skills</h3>
+                <div th:if="${job.requiredSkills != null and !job.requiredSkills.isBlank()}" class="skill-list">
+                    <span th:each="skill : ${job.requiredSkills.split(',')}"
+                          class="skill-badge"
+                          th:text="${skill.trim()}">Skill Placeholder</span>
+                </div>
+                <p th:unless="${job.requiredSkills != null and !job.requiredSkills.isBlank()}" class="mt-4 text-gray-500 italic">No specific skills listed by the employer.</p>
+            </div>
+
+            <div class="modern-card job-content-section">
+                <h3>
+                    <i class="fa-solid fa-users"></i>
+                    <span th:text="'About ' + ${job.postedBy.companyName}">About Company</span>
+                </h3>
+                <p class="mt-4 text-gray-700 leading-relaxed" th:text="${job.postedBy.companyDescription}">No detailed company info provided.</p>
+
+                <div th:if="${job.postedBy.companyDescription == null or job.postedBy.companyDescription.isBlank()}"
+                     class="alert-info alert-message-box mt-5 bg-blue-50 text-blue-800 border-blue-200">
+                    <i class="fa-solid fa-circle-info"></i> This company has not provided a detailed description.
+                </div>
+            </div>
+        </div>
+
+        <div class="right-column sidebar-area">
+
+            <div class="modern-card job-overview">
+                <h3><i class="fa-solid fa-chart-simple"></i>Overview</h3>
+                <div class="space-y-0 mt-4">
+                    <div class="detail-row text-base">
+                        <span class="flex items-center">
+                            <i class="fa-solid fa-calendar-day"></i><strong>Posted:</strong>
+                        </span>
+                        <span class="text-gray-700 font-medium" th:text="${#temporals.format(job.postedAt, 'dd MMM yyyy')}">Date</span>
+                    </div>
+                    <div class="detail-row text-base">
+                        <span class="flex items-center">
+                            <i class="fa-solid fa-map-marker-alt"></i><strong>Location:</strong>
+                        </span>
+                        <span class="text-gray-700 font-medium" th:text="${job.locationCity}">City</span>
+                    </div>
+                    <div class="detail-row text-base">
+                         <span class="flex items-center">
+                            <i class="fa-solid fa-layer-group"></i><strong>Category:</strong>
+                        </span>
+                        <span class="text-gray-700 font-medium" th:text="${job.jobCategory}">Category</span>
+                    </div>
+                    <div class="detail-row text-base">
+                        <span class="flex items-center">
+                            <i class="fa-solid fa-briefcase"></i><strong>Type:</strong>
+                        </span>
+                        <span class="px-3 py-1 bg-teal-50 text-teal-700 rounded-full text-sm font-semibold border border-teal-200">
+                            <i th:classappend="${job.jobType == 'Full Time' ? 'fa-hourglass-half' : job.jobType == 'Part Time' ? 'fa-clock' : 'fa-laptop-code'}" class="fa-solid mr-1"></i>
+                            <span th:text="${job.jobType}">Type</span>
+                        </span>
+                    </div>
+                    <div class="detail-row text-base">
+                        <span class="flex items-center">
+                            <i class="fa-solid fa-money-bill-wave"></i><strong>Salary:</strong>
+                        </span>
+                        <span class="text-teal-700 font-extrabold" th:if="${job.salaryMin != null}" th:text="'$' + ${#numbers.formatDecimal(job.salaryMin, 0, 'COMMA', 0, 'POINT')} + ' - $' + ${#numbers.formatDecimal(job.salaryMax, 0, 'COMMA', 0, 'POINT')}">Range</span>
+                        <span class="text-gray-500 font-medium italic" th:unless="${job.salaryMin != null}">Not Disclosed</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modern-card application-cta-card" style="padding-top: 25px; padding-bottom: 25px;">
+                <p th:if="${successMessage}" class="alert-success alert-message-box bg-green-100 text-green-700 border-green-300" th:text="${successMessage}"><i class="fa-solid fa-circle-check"></i> Success</p>
+                <p th:if="${errorMessage}" class="alert-error alert-message-box bg-red-100 text-red-700 border-red-300" th:text="${errorMessage}"><i class="fa-solid fa-circle-xmark"></i> Error</p>
+
+                <div th:if="${!isAuthenticated}">
+                    <div class="apply-status-message alert-info bg-blue-100 text-blue-700 border-blue-300 shadow-sm mb-5">
+                        <i class="fa-solid fa-lock"></i> You must be logged in to apply.
+                    </div>
+                    <a th:href="@{/login}" class="apply-btn btn-primary-themed mt-4">
+                        <i class="fa-solid fa-right-to-bracket"></i> Login / Register
+                    </a>
+                </div>
+
+                <div th:if="${isAuthenticated and isJobSeeker}">
+
+                    <div th:if="${alreadyApplied}">
+                        <div class="apply-status-message alert-success bg-green-100 text-green-700 border-green-300 shadow-sm mb-5">
+                            <i class="fa-solid fa-check-circle"></i> Applied
+                        </div>
+                        <div class="space-y-3">
+                            <a th:href="@{/seeker/dashboard(view='tracker')}" class="apply-btn bg-teal-600 text-white hover:bg-teal-700"><i class="fa-solid fa-list-check"></i> View Status</a>
+                        </div>
+                    </div>
+
+                    <div th:if="${!alreadyApplied and limitReached}">
+                        <div class="apply-status-message bg-red-50 text-red-700 border border-red-200 shadow-sm mb-5 flex flex-col">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-lock"></i> <strong>Limit Reached</strong>
+                            </div>
+                            <span class="text-sm font-normal mt-1">Free limit of 10 applications reached.</span>
+                        </div>
+                        <a th:href="@{/premium}" class="apply-btn bg-gold-gradient text-white font-bold hover:shadow-gold-glow mt-4 border-0 relative overflow-hidden group no-underline">
+                            <span class="relative z-10"><i class="fa-solid fa-crown mr-2"></i> Upgrade for Unlimited</span>
+                        </a>
+                    </div>
+
+                    <div th:if="${!alreadyApplied and !limitReached}">
+                        <div th:if="${!profileComplete}">
+                            <div class="apply-status-message alert-error bg-yellow-100 text-yellow-800 border-yellow-300 shadow-sm mb-5">
+                                <i class="fa-solid fa-triangle-exclamation"></i> **Profile Incomplete** (<strong th:text="${profileCompleteness} + '%'"></strong>).
+                            </div>
+                            <a th:href="@{/seeker/profile/edit}" class="apply-btn bg-yellow-500 text-white hover:bg-yellow-600 mt-4">
+                                <i class="fa-solid fa-user-pen"></i> Complete Profile to Apply
+                            </a>
+                        </div>
+
+                        <form th:if="${profileComplete}"
+                              th:action="@{/jobs/apply/{jobId}(jobId=${job.id})}" method="post">
+                            <button type="submit" class="apply-btn btn-primary-themed">
+                                <i class="fa-solid fa-paper-plane mr-2"></i> Submit Application
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <div th:if="${isAuthenticated and !isJobSeeker}">
+                    <div class="apply-status-message alert-error bg-red-100 text-red-700 border-red-300 shadow-sm">
+                        <i class="fa-solid fa-ban"></i> You are logged in as an Employer/Admin.
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    const jobId = /*[[${job.id}]]*/ 0;
+
+    function calculateMatch() {
+        const startView = document.getElementById('match-start-view');
+        const loadingView = document.getElementById('match-loading-view');
+        const resultView = document.getElementById('match-result-view');
+
+        // Hide Button, Show Loader
+        startView.classList.add('hidden');
+        loadingView.classList.remove('hidden');
+
+        // Perform API Call
+        fetch(`/api/jobs/${jobId}/match`)
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.json();
+            })
+            .then(data => {
+                // Update Results
+                const score = data.score || 0;
+                const circle = document.getElementById('score-circle');
+
+                // Update Conic Gradient via CSS Variable
+                circle.style.setProperty('--percent', score + '%');
+                circle.setAttribute('data-score', score);
+
+                // Update Text
+                document.getElementById('match-reasoning').innerText = data.reasoning || 'No reasoning provided.';
+
+                const label = score >= 80 ? 'Great Match!' : (score >= 50 ? 'Potential Match' : 'Low Match');
+                document.getElementById('match-level-text').innerText = label;
+
+                // Update Keywords
+                const kwContainer = document.getElementById('missing-keywords-container');
+                const kwList = document.getElementById('keywords-list');
+                kwList.innerHTML = ''; // Clear previous
+
+                if (data.missingKeywords && data.missingKeywords.length > 0) {
+                    kwContainer.classList.remove('hidden');
+                    data.missingKeywords.forEach(kw => {
+                        const span = document.createElement('span');
+                        span.className = 'px-2 py-1 bg-red-50 text-red-600 text-xs rounded-md border border-red-100';
+                        span.innerText = kw;
+                        kwList.appendChild(span);
+                    });
+                }
+
+                // Hide Loader, Show Result
+                setTimeout(() => {
+                    loadingView.classList.add('hidden');
+                    resultView.classList.remove('hidden');
+                }, 800);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                loadingView.innerHTML = '<p class="text-red-500 font-bold">Error calculating score. Please try again.</p>';
+            });
+    }
+    /*]]>*/
+</script>
+
+</body>
+</html>

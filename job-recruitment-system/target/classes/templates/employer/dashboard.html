@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Employer Dashboard | SwiftHire</title>
+
+    <link rel="icon" type="image/png" th:href="@{/images/nav.png}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <meta name="_csrf" th:content="${_csrf.token}" />
+    <meta name="_csrf_header" th:content="${_csrf.headerName}" />
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        teal: {
+                            50: '#f0fdfa', 100: '#ccfbf1', 500: '#008080',
+                            600: '#008080', 700: '#008080', 800: '#008080',
+                            900: '#008080',
+                        },
+                        'premium-gold': '#FFD700'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            --teal: #008080;
+            --white: #ffffff;
+            --premium-gold: #FFD700;
+        }
+
+        body {
+            background: #f8f9fa;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: var(--teal);
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 16rem;
+            overflow-y: auto;
+        }
+
+        /* Nav Active - Clean white overlay for active state */
+        .nav-link {
+            color: white !important;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-link.active-nav {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.15)) !important;
+            box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.1);
+            color: white !important;
+        }
+
+        .nav-link:not(.active-nav):hover {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.08)) !important;
+        }
+
+        /* Animated border for active nav */
+        .nav-link.active-nav::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: white;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        /* Job filter links with theme colors */
+        .job-filter-link.active-all {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1)) !important;
+            color: white !important;
+            font-weight: 600 !important;
+            border-left: 3px solid white;
+            padding-left: 13px;
+        }
+
+        .job-filter-link.active-active {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.3), rgba(16, 185, 129, 0.15)) !important;
+            color: #34d399 !important;
+            font-weight: 600 !important;
+            border-left: 3px solid #34d399;
+            padding-left: 13px;
+        }
+
+        .job-filter-link.active-pending {
+            background: linear-gradient(135deg, rgba(251, 191, 36, 0.3), rgba(251, 191, 36, 0.15)) !important;
+            color: #fbbf24 !important;
+            font-weight: 600 !important;
+            border-left: 3px solid #fbbf24;
+            padding-left: 13px;
+        }
+
+        /* Badge styling */
+        .badge-count-white {
+            background: rgba(255, 255, 255, 0.25);
+            color: white;
+        }
+
+        .badge-count-teal {
+            background: rgba(255, 255, 255, 0.25);
+            color: white;
+        }
+
+        /* Scrollbar */
+        .sidebar::-webkit-scrollbar { width: 6px; }
+        .sidebar::-webkit-scrollbar-track { background: transparent; }
+        .sidebar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.3); border-radius: 3px; }
+        .sidebar::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.5); }
+
+        /* Main Content */
+        .main-content-wrapper {
+            margin-left: 16rem;
+            width: calc(100% - 16rem);
+            min-height: 100vh;
+        }
+
+        /* Cards */
+        .stat-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 4px 12px rgba(0, 128, 128, 0.15);
+            border-color: var(--teal);
+        }
+
+        .stat-card::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--teal), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.6s;
+        }
+
+        .stat-card:hover::after {
+            transform: translateX(100%);
+        }
+
+        .content-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Modern Chart Container */
+        .modern-chart-container {
+            background: linear-gradient(145deg, #ffffff, #f8f9fa);
+            border-radius: 24px;
+            box-shadow:
+                    20px 20px 60px #d1d5db,
+                    -20px -20px 60px #ffffff,
+                    inset 0 0 0 1px rgba(0, 128, 128, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .modern-chart-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #008080, #00a0a0, #008080);
+            background-size: 200% 100%;
+            animation: shimmer 3s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        .chart-glow {
+            filter: drop-shadow(0 0 20px rgba(0, 128, 128, 0.2));
+        }
+
+        /* Input Styles */
+        .input-field {
+            background: white;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s;
+        }
+
+        .input-field:focus {
+            border-color: var(--teal);
+            box-shadow: 0 0 0 3px rgba(0, 128, 128, 0.1);
+            outline: none;
+        }
+
+        /* Button Styles */
+        .btn-primary {
+            background: var(--teal);
+            color: white;
+            transition: all 0.3s;
+        }
+
+        .btn-primary:hover {
+            background: #006666;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 128, 128, 0.3);
+        }
+
+        /* View Transitions */
+        .view-content {
+            display: none;
+        }
+
+        .view-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .view-content.active-flex {
+            display: flex !important;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Table */
+        table th {
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        table tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        /* Badges */
+        .badge-green {
+            background: #10b981;
+            color: white;
+        }
+
+        .badge-yellow {
+            background: #f59e0b;
+            color: white;
+        }
+
+        /* Support Chat Styles */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            width: 100%;
+            background-color: #ffffff;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .message-header {
+            flex-shrink: 0;
+            padding: 1.5rem;
+            background-color: var(--teal);
+            color: white;
+            font-weight: 600;
+            font-size: 1.25rem;
+        }
+
+        .message-history {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background-color: #f7f9fb;
+        }
+
+        .message-bubble {
+            max-width: 70%;
+            padding: 12px 18px;
+            border-radius: 20px;
+            margin-bottom: 12px;
+            clear: both;
+            position: relative;
+            word-wrap: break-word;
+        }
+
+        .sent {
+            float: right;
+            background-color: var(--teal);
+            color: white;
+            border-bottom-right-radius: 5px;
+            margin-left: auto;
+            clear: both;
+        }
+
+        .received {
+            float: left;
+            background-color: #e9ecef;
+            color: #333;
+            border-bottom-left-radius: 5px;
+            clear: both;
+        }
+
+        .message-time {
+            display: block;
+            font-size: 0.7rem;
+            margin-top: 5px;
+            opacity: 0.8;
+        }
+
+        .message-input-area {
+            flex-shrink: 0;
+            padding: 1.25rem;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .message-input-form {
+            display: flex;
+            align-items: center;
+            border: 2px solid #e2e8f0;
+            border-radius: 25px;
+            overflow: hidden;
+            background: #fff;
+            transition: all 0.2s;
+        }
+
+        .message-input-form:focus-within {
+            border-color: var(--teal);
+            box-shadow: 0 0 0 3px rgba(0, 128, 128, 0.1);
+        }
+
+        .message-input {
+            flex-grow: 1;
+            padding: 12px 18px;
+            border: none;
+            outline: none;
+            font-size: 0.95rem;
+        }
+
+        .send-button {
+            padding: 12px 18px;
+            background-color: transparent;
+            color: var(--teal);
+            border: none;
+            cursor: pointer;
+            font-size: 1.25rem;
+            transition: all 0.2s;
+        }
+
+        .send-button:hover {
+            color: #006666;
+            transform: scale(1.1);
+        }
+
+        /* Clear float for message container */
+        .message-history::after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+
+        /* Dropdown Styles */
+        .dropdown-menu {
+            position: absolute;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            z-index: 50;
+            min-width: 220px;
+            overflow: hidden;
+            animation: dropdownOpen 0.2s ease-out;
+        }
+
+        @keyframes dropdownOpen {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .dropdown-menu button {
+            width: 100%;
+            text-align: left;
+            padding: 12px 16px;
+            transition: all 0.2s;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .dropdown-menu button:hover {
+            background: #f8f9fa;
+        }
+
+        /* Notification Styles */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            z-index: 100;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .notification.success {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+        }
+
+        .notification.error {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+
+        .notification.info {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+        }
+
+        /* --- PREMIUM GOLD ROW STYLING --- */
+        .bg-featured-gold {
+            /* Stronger, Premium Gold Gradient */
+            background: linear-gradient(90deg, #FFFBEB 0%, #FEF3C7 100%);
+            border-left: 4px solid #FFD700 !important;
+        }
+        .bg-featured-gold:hover {
+            background: linear-gradient(90deg, #FEF3C7 0%, #FDE68A 100%);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+<div class="flex">
+
+    <div th:fragment="sidebar(currentView)"
+         class="sidebar flex flex-col p-6 text-white">
+
+        <a th:href="@{/}" class="mb-8 flex justify-center py-4">
+            <img th:src="@{/images/logo-white.png}" alt="SwiftHire Logo" class="h-32 w-auto transform hover:scale-105 transition-transform duration-300">
+        </a>
+
+        <div class="flex flex-col items-center justify-center p-4 mb-8 bg-white/10 rounded-xl backdrop-blur-sm">
+            <img th:src="@{/employer/logos/download/{filename}(filename=${user.companyLogoFilename})}"
+                 th:if="${user.companyLogoFilename != null}"
+                 alt="Company Logo" class="w-16 h-16 object-cover rounded-full ring-4 ring-white/30">
+            <div th:unless="${user.companyLogoFilename != null}"
+                 class="w-16 h-16 bg-white/20 flex items-center justify-center rounded-full ring-4 ring-white/30">
+                <span class="font-bold text-white text-xl" th:text="${#strings.substring(companyName, 0, 1)}">C</span>
+            </div>
+            <p class="text-sm font-bold mt-3 text-white" th:text="${user.firstName + ' ' + user.lastName}">John Doe</p>
+            <p class="text-xs opacity-90 text-white" th:text="${companyName}">Tech Corp</p>
+
+            <div class="mt-2 text-xs font-semibold px-3 py-1 rounded-full"
+                 th:classappend="${user.premiumTier == 'PREMIUM' or user.premiumTier == 'PRO' ? 'bg-yellow-400 text-black' : 'bg-gray-200 text-gray-700'}">
+                <span th:text="${user.premiumTier ?: 'BASIC'}">BASIC</span>
+                <i th:if="${user.premiumTier == 'PREMIUM' or user.premiumTier == 'PRO'}" class="fa-solid fa-crown ml-1"></i>
+            </div>
+
+            <a th:if="${user.premiumTier == null or user.premiumTier == 'BASIC'}"
+               th:href="@{/premium}"
+               class="mt-3 text-xs font-bold px-3 py-1 rounded-lg bg-white text-teal-600 hover:bg-gray-200 transition-all">
+                Upgrade Now
+            </a>
+        </div>
+
+        <div class="p-4 mb-4 bg-white/10 rounded-xl backdrop-blur-sm">
+            <p class="text-xs uppercase font-semibold text-white/70 mb-2">My Capacity</p>
+
+            <div th:if="${isPremium}">
+                <p class="premium-text font-bold mb-1">
+                    <i class="fa-solid fa-star" style="color: var(--premium-gold);"></i> PREMIUM: UNLIMITED
+                </p>
+
+                <div th:if="${onHoldJobCount > 0}" class="mt-3 pt-3 border-t border-white/20">
+                    <p class="text-xs text-yellow-200 mb-2">
+                        <i class="fa-solid fa-circle-exclamation"></i> You have <span th:text="${onHoldJobCount}">1</span> held job(s).
+                    </p>
+                    <form th:action="@{/employer/jobs/release-held}" method="post">
+                        <button type="submit" class="w-full text-center font-bold py-2 px-3 rounded-lg bg-yellow-500 text-black text-xs hover:bg-yellow-400 transition-colors">
+                            Release Held Jobs
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div th:unless="${isPremium}">
+                <p class="text-white text-sm">
+                    Active Jobs:
+                    <span th:text="${activeJobCount + pendingJobCount}"
+                          th:classappend="${(activeJobCount + pendingJobCount) >= 5 ? 'text-red-300' : 'text-white'}">0</span>
+                    / 5
+                </p>
+                <div class="progress-bar-limit my-2">
+                    <div class="progress-limit"
+                         th:with="count=${activeJobCount + pendingJobCount}, limit=5,
+                                  percentage=${T(java.lang.Math).min(100.0, (count * 100.0) / limit)}"
+                         th:style="'width:' + ${percentage} + '%; background-color: ' + (${count >= limit ? '#ef4444' : 'rgba(255, 255, 255, 0.8)'})">
+                    </div>
+                </div>
+                <a th:href="@{/premium}" class="btn-primary w-full text-center font-bold py-2 px-4 rounded-lg mt-2 block transition-all hover:scale-105" style="font-size: 0.85rem; background: var(--premium-gold); color: var(--teal); border: 1px solid var(--premium-gold);">
+                    <i class="fa-solid fa-rocket mr-1"></i> Go Premium
+                </a>
+            </div>
+        </div>
+
+        <nav class="flex-1 space-y-2" id="sidebar-nav">
+
+            <a th:href="@{/employer/dashboard(view='overview')}" data-view="overview"
+               th:classappend="${currentView == 'overview' ? 'active-nav' : ''}"
+               class="nav-link sidebar-link flex items-center space-x-3 p-3 rounded-lg transition-all text-white">
+                <i class="fa-solid fa-chart-pie w-5"></i>
+                <span class="font-medium">Dashboard</span>
+            </a>
+
+            <div class="pt-4 mt-4 border-t border-white/20 space-y-2">
+                <p class="text-xs uppercase font-semibold opacity-70 px-3 mb-3 text-white">Recruitment</p>
+
+                <a th:href="@{/employer/dashboard(view='messages')}" data-view="messages"
+                   th:classappend="${currentView == 'messages' ? 'active-nav' : ''}"
+                   class="nav-link sidebar-link flex items-center justify-between p-3 rounded-lg transition-all text-white">
+                    <div class="flex items-center space-x-3">
+                        <i class="fa-solid fa-inbox w-5"></i>
+                        <span class="font-medium">Applicant Inbox</span>
+                    </div>
+                    <span th:if="${inboxApplications != null and !inboxApplications.isEmpty()}"
+                          class="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full animate-pulse"
+                          th:text="${inboxApplications.size()}">3</span>
+                </a>
+
+                <a th:href="@{/employer/dashboard(view='candidates')}" data-view="candidates"
+                   th:classappend="${currentView == 'candidates' ? 'active-nav' : ''}"
+                   class="nav-link sidebar-link flex items-center justify-between p-3 rounded-lg transition-all text-white">
+                    <div class="flex items-center space-x-3">
+                        <i class="fa-solid fa-users w-5"></i>
+                        <span class="font-medium">Candidates</span>
+                    </div>
+                    <span th:if="${candidateCount != null && candidateCount > 0}"
+                          class="badge-count-teal text-xs font-bold px-2 py-1 rounded-full"
+                          th:text="${candidateCount}">12</span>
+                </a>
+
+                <a th:href="@{/employer/dashboard(view='support')}" data-view="support"
+                   th:classappend="${currentView == 'support' ? 'active-nav' : ''}"
+                   class="nav-link sidebar-link flex items-center space-x-3 p-3 rounded-lg transition-all text-white">
+                    <i class="fa-solid fa-headset w-5"></i>
+                    <span class="font-medium">Support Chat</span>
+                </a>
+
+                <p class="text-white font-semibold p-3 opacity-90 flex items-center space-x-3">
+                    <i class="fa-solid fa-briefcase w-5"></i>
+                    <span>Job Postings</span>
+                </p>
+
+                <div class="pl-8 space-y-1">
+                    <a th:href="@{/employer/dashboard(view='jobs', status='ALL')}" data-view="jobs" data-status="ALL"
+                       th:classappend="${currentView == 'jobs' and currentFilter == 'ALL' ? 'active-all' : ''}"
+                       class="job-filter-link flex justify-between items-center p-2 rounded-lg text-sm transition-all text-white/80 hover:bg-white/10">
+                        <span>All Jobs</span>
+                        <span class="badge-count-white px-2 py-0.5 rounded-full text-xs font-semibold" th:text="${totalJobCount}">0</span>
+                    </a>
+                    <a th:href="@{/employer/dashboard(view='jobs', status='ACTIVE')}" data-view="jobs" data-status="ACTIVE"
+                       th:classappend="${currentView == 'jobs' and currentFilter == 'ACTIVE' ? 'active-active' : ''}"
+                       class="job-filter-link flex justify-between items-center p-2 rounded-lg text-sm transition-all text-white/80 hover:bg-white/10">
+                        <span>Active</span>
+                        <span class="px-2 py-0.5 rounded-full text-xs font-semibold"
+                              th:classappend="${currentView == 'jobs' and currentFilter == 'ACTIVE' ? 'bg-green-500/30 text-green-300' : 'badge-count-white'}"
+                              th:text="${activeJobCount}">0</span>
+                    </a>
+                    <a th:href="@{/employer/dashboard(view='jobs', status='PENDING_ADMIN')}" data-view="jobs" data-status="PENDING_ADMIN"
+                       th:classappend="${currentView == 'jobs' and currentFilter == 'PENDING_ADMIN' ? 'active-pending' : ''}"
+                       class="job-filter-link flex justify-between items-center p-2 rounded-lg text-sm transition-all text-white/80 hover:bg-white/10">
+                        <span>Pending</span>
+                        <span class="px-2 py-0.5 rounded-full text-xs font-semibold"
+                              th:classappend="${currentView == 'jobs' and currentFilter == 'PENDING_ADMIN' ? 'bg-yellow-500/30 text-yellow-300' : 'badge-count-white'}"
+                              th:text="${pendingJobCount}">0</span>
+                    </a>
+                </div>
+
+                <a th:href="@{/employer/jobs/new}"
+                   class="btn-primary w-full text-center font-bold py-3 px-4 rounded-lg mt-4 block">
+                    <i class="fa-solid fa-plus mr-2"></i>Post New Job
+                </a>
+            </div>
+        </nav>
+
+        <div class="mt-auto space-y-2 pt-4 border-t border-white/20">
+            <a th:href="@{/employer/company/edit}"
+               class="flex items-center space-x-3 p-3 rounded-lg transition-all hover:bg-white/10 text-white">
+                <i class="fa-solid fa-gear w-5"></i>
+                <div>
+                    <span class="text-sm font-medium">Settings</span>
+                    <p class="text-xs opacity-70">Manage Profile</p>
+                </div>
+            </a>
+
+            <form th:action="@{/logout}" method="post" class="w-full">
+                <button type="submit"
+                        class="flex items-center space-x-3 p-3 rounded-lg transition-all w-full text-left hover:bg-red-500/20 text-white">
+                    <i class="fa-solid fa-right-from-bracket w-5"></i>
+                    <span class="text-sm font-medium">Logout</span>
+                </button>
+            </form>
+        </div>
+    </div>
+    <div class="main-content-wrapper">
+
+        <header class="bg-white border-b border-gray-200 p-6 sticky top-0 z-40">
+            <h1 class="text-3xl font-bold text-gray-800" id="main-header-title"
+                th:text="${currentView == 'overview' ? 'Dashboard Overview' :
+                              (currentView == 'messages' ? 'Applicant Inbox' :
+                              (currentView == 'jobs' ? 'Job Postings' :
+                              (currentView == 'support' ? 'Support Chat' :
+                              (currentView == 'candidates' ? 'Find Candidates' : 'Employer Dashboard'))))}">
+                Dashboard Overview
+            </h1>
+        </header>
+
+        <div class="p-6">
+            <div th:if="${successMessage}" class="bg-green-50 border-l-4 border-green-400 text-green-800 p-4 rounded-lg mb-4" role="status" aria-live="polite">
+                <p class="font-semibold">Success</p>
+                <p th:text="${successMessage}"></p>
+            </div>
+            <div th:if="${errorMessage}" class="bg-red-50 border-l-4 border-red-400 text-red-800 p-4 rounded-lg mb-4" role="alert" aria-live="assertive">
+                <p class="font-semibold">Error</p>
+                <p th:text="${errorMessage}"></p>
+            </div>
+            <div th:if="${infoMessage}" class="bg-blue-50 border-l-4 border-blue-400 text-blue-800 p-4 rounded-lg mb-4" role="status" aria-live="polite">
+                <p class="font-semibold">Info</p>
+                <p th:text="${infoMessage}"></p>
+            </div>
+
+
+            <div id="overview-view"
+                 th:classappend="${currentView == 'overview' ? 'active' : ''}"
+                 class="view-content space-y-6">
+
+                <section class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                    <div class="stat-card p-6 rounded-xl">
+                        <h3 class="text-sm font-medium text-gray-600">Total Applications</h3>
+                        <p class="text-3xl font-bold text-gray-800 mt-2" th:text="${dashboardStats.TOTAL_APPLICATIONS}">0</p>
+                    </div>
+                    <div class="stat-card p-6 rounded-xl">
+                        <h3 class="text-sm font-medium text-gray-600">New (Applied)</h3>
+                        <p class="text-3xl font-bold text-blue-600 mt-2" th:text="${dashboardStats.APPLIED}">0</p>
+                    </div>
+                    <div class="stat-card p-6 rounded-xl">
+                        <h3 class="text-sm font-medium text-gray-600">Under Review</h3>
+                        <p class="text-3xl font-bold text-yellow-600 mt-2" th:text="${dashboardStats.REVIEWED}">0</p>
+                    </div>
+                    <div class="stat-card p-6 rounded-xl">
+                        <h3 class="text-sm font-medium text-gray-600">Accepted</h3>
+                        <p class="text-3xl font-bold text-green-600 mt-2" th:text="${dashboardStats.ACCEPTED}">0</p>
+                    </div>
+                    <div class="stat-card p-6 rounded-xl">
+                        <h3 class="text-sm font-medium text-gray-600">Rejected</h3>
+                        <p class="text-3xl font-bold text-red-600 mt-2" th:text="${dashboardStats.REJECTED}">0</p>
+                    </div>
+                </section>
+
+                <section class="modern-chart-container p-8">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 class="text-2xl font-bold text-gray-800">Application Analytics</h3>
+                            <p class="text-sm text-gray-500 mt-1">Real-time recruitment funnel visualization</p>
+                        </div>
+                        <div class="flex space-x-2" style="position: relative;">
+                            <button id="export-btn" class="px-4 py-2 bg-teal-50 text-teal-600 rounded-lg text-sm font-medium hover:bg-teal-100 transition-colors">
+                                <i class="fa-solid fa-download mr-2"></i>Export
+                            </button>
+                            <button id="filter-btn" class="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
+                                <i class="fa-solid fa-filter mr-2"></i>Filter
+                            </button>
+                        </div>
+                    </div>
+                    <div class="h-96 chart-glow">
+                        <canvas id="applicationChart"></canvas>
+                    </div>
+                </section>
+            </div>
+
+            <div id="inbox-view"
+                 th:classappend="${currentView == 'messages' ? 'active-flex' : ''}"
+                 class="view-content">
+
+                <div id="inbox-list" class="w-80 bg-white border-r border-gray-200 flex flex-col h-[calc(100vh-8rem)]">
+                    <div class="p-4 border-b border-gray-200">
+                        <input type="text" placeholder="Search conversations..."
+                               class="input-field w-full p-3 rounded-lg">
+                    </div>
+                    <div class="overflow-y-auto flex-grow">
+                        <div th:each="app : ${inboxApplications}"
+                             th:data-app-id="${app.id}"
+                             th:data-sender-name="${app.seeker.firstName + ' ' + app.seeker.lastName}"
+                             th:data-employer-id="${user.id}"
+                             class="inbox-item p-4 cursor-pointer hover:bg-gray-50 transition-all border-b border-gray-100">
+                            <div class="font-semibold text-gray-800" th:text="${app.seeker.firstName + ' ' + app.seeker.lastName}">John Doe</div>
+                            <div class="text-sm text-teal-600 truncate" th:text="${app.job.title}">Frontend Engineer</div>
+                            <div class="text-xs text-gray-500 mt-1">Status: <span th:text="${app.status}">APPLIED</span></div>
+                        </div>
+                        <div th:if="${inboxApplications.isEmpty()}" class="p-8 text-center text-gray-400">
+                            No conversations yet.
+                        </div>
+                    </div>
+                </div>
+
+                <div id="message-dialogue-host" class="flex-grow flex flex-col bg-white">
+                    <div id="react-chat-root" class="w-full h-full flex items-center justify-center text-gray-400">
+                        Select a conversation to start chatting.
+                    </div>
+                </div>
+            </div>
+
+            <div id="job-list-view"
+                 th:classappend="${currentView == 'jobs' ? 'active' : ''}"
+                 class="view-content">
+                <section class="content-card p-6">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6">My Jobs (<span th:text="${currentFilter}">ALL</span>)</h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                            <tr class="border-b border-gray-200 text-gray-500 text-xs uppercase tracking-wider">
+                                <th class="pb-4 pl-4 font-semibold">Job Title</th>
+                                <th class="pb-4 font-semibold">Type</th>
+                                <th class="pb-4 font-semibold">Location</th>
+                                <th class="pb-4 font-semibold">Salary Range</th>
+                                <th class="pb-4 font-semibold">Status</th>
+                                <th class="pb-4 font-semibold text-right pr-4">Action</th>
+                            </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+                            <tr th:each="job : ${jobs}" class="hover:bg-gray-50 transition-all">
+                                <td class="py-4 pl-4">
+                                    <div class="flex items-center gap-4">
+                                        <div class="relative flex-shrink-0">
+                                            <div class="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden border border-gray-200">
+                                                <i class="fa-solid fa-briefcase text-gray-400 text-xl"></i>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <h4 class="font-bold text-gray-800 text-base" th:text="${job.title}">Senior Developer</h4>
+                                            <p class="text-xs text-gray-500" th:text="'Posted: ' + ${#temporals.format(job.postedAt, 'dd MMM yyyy')}">Oct 12, 2025</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-4 text-sm text-gray-600" th:text="${job.jobType}">Full Time</td>
+                                <td class="py-4 text-sm text-gray-600" th:text="${job.locationCity}">Remote</td>
+                                <td class="py-4 text-sm font-semibold text-gray-700"
+                                    th:text="${job.salaryMin != null ? '$' + job.salaryMin + ' - $' + job.salaryMax : 'Not Disclosed'}">
+                                    $80k - $100k
+                                </td>
+                                <td class="py-4">
+                                    <span class="px-2 py-1 rounded-full text-xs font-semibold"
+                                          th:classappend="${job.status == 'ACTIVE' ? 'bg-green-100 text-green-700' : (job.status == 'PENDING_ADMIN' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600')}"
+                                          th:text="${job.status}">ACTIVE</span>
+                                </td>
+                                <td class="py-4 pr-4 text-right">
+                                    <a th:href="@{/employer/jobs/{jobId}/applicants(jobId=${job.id})}"
+                                       class="text-teal-600 hover:text-teal-700 font-medium text-sm mr-3">Applicants</a>
+                                </td>
+                            </tr>
+                            <tr th:if="${jobs.isEmpty()}">
+                                <td colspan="6" class="py-8 text-center text-gray-500">No jobs found for this filter.</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <div id="support-view"
+                 th:classappend="${currentView == 'support' ? 'active-flex' : ''}"
+                 class="view-content h-[calc(100vh-8rem)]"
+                 style="padding: 0;">
+                <div class="chat-container">
+                    <div class="message-header">
+                        <i class="fa-solid fa-headset mr-2"></i>Support Chat (Admin)
+                    </div>
+                    <div class="message-history" id="message-history-support">
+                        <p class="text-center text-gray-400 p-4">Loading support messages...</p>
+                    </div>
+                    <div class="message-input-area">
+                        <form class="message-input-form" id="support-chat-form">
+                            <input class="message-input"
+                                   id="support-chat-input"
+                                   placeholder="Type your message to admin..."
+                                   required/>
+                            <button type="submit" class="send-button">
+                                <i class="fa-solid fa-paper-plane"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div id="candidates-view"
+                 th:classappend="${currentView == 'candidates' ? 'active' : ''}"
+                 class="view-content">
+                <section class="content-card p-6">
+                    <form th:action="@{/employer/dashboard}" method="get" class="space-y-4 mb-6">
+                        <input type="hidden" name="view" value="candidates" />
+
+                        <div th:classappend="${!isPremium ? 'opacity-50 pointer-events-none grayscale' : ''}">
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <input type="text" name="searchSkills" th:value="${searchSkills}"
+                                       placeholder="Skills (Java, React)"
+                                       class="input-field p-3 rounded-lg">
+                                <input type="text" name="searchTitle" th:value="${searchTitle}"
+                                       placeholder="Job Title (e.g. Engineer)"
+                                       class="input-field p-3 rounded-lg">
+                                <input type="text" name="searchCity" th:value="${searchCity}"
+                                       placeholder="City"
+                                       class="input-field p-3 rounded-lg">
+                                <div class="flex gap-2">
+                                    <button type="submit" class="btn-primary flex-1 p-3 rounded-lg font-bold">
+                                        <i class="fa-solid fa-search mr-2"></i>Search
+                                    </button>
+                                    <a th:href="@{/employer/dashboard(view='candidates')}"
+                                       class="p-3 bg-gray-100 rounded-lg text-gray-600 hover:bg-gray-200 transition-all">
+                                        <i class="fa-solid fa-rotate-right"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+
+                    <div th:unless="${isPremium}" class="bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 p-4 rounded-lg mb-6" role="alert">
+                        <div class="flex items-center">
+                            <i class="fa-solid fa-star mr-3 text-yellow-600"></i>
+                            <div>
+                                <p class="font-bold">Unlock Advanced Search</p>
+                                <p class="text-sm">Advanced candidate filtering is a **Premium** feature. Upgrade to refine your search results instantly.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="border-b border-gray-200">
+                            <tr>
+                                <th class="pb-4 pl-4">Candidate</th>
+                                <th class="pb-4">Title</th>
+                                <th class="pb-4">Location</th>
+                                <th class="pb-4">Skills</th>
+                                <th class="pb-4">Experience</th>
+                                <th class="pb-4 text-right pr-4">Action</th>
+                            </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+                            <tr th:each="profile : ${candidates}"
+                                class="border-b border-gray-100 hover:bg-gray-50 transition-all"
+                                th:classappend="${profile.isFeatured} ? 'bg-featured-gold' : ''">
+
+                                <td class="py-4 pl-4">
+                                    <div class="flex items-center gap-4">
+                                        <div class="relative flex-shrink-0">
+                                            <div class="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden border-2"
+                                                 th:classappend="${profile.isFeatured} ? 'border-yellow-400 shadow-sm' : 'border-white'">
+
+                                                <img th:if="${profile.user.profilePictureFilename != null}"
+                                                     th:src="@{/seeker/profile/pic/{userId}(userId=${profile.user.id})}"
+                                                     class="w-full h-full object-cover">
+
+                                                <span th:if="${profile.user.profilePictureFilename == null}"
+                                                      class="text-lg font-bold text-gray-500"
+                                                      th:text="${#strings.substring(profile.user.firstName, 0, 1)}">A</span>
+                                            </div>
+
+                                            <div th:if="${profile.isFeatured}"
+                                                 class="absolute -top-1.5 -right-1.5 bg-yellow-400 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full shadow-md ring-2 ring-white z-10">
+                                                <i class="fa-solid fa-crown"></i>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <div class="flex items-center gap-2">
+                                                <h4 class="font-bold text-gray-800 text-base"
+                                                    th:text="${profile.user.firstName + ' ' + profile.user.lastName}">Jane Doe</h4>
+
+                                                <span th:if="${profile.isFeatured}"
+                                                      class="px-2 py-0.5 rounded text-[10px] font-bold bg-yellow-100 text-yellow-700 border border-yellow-200 uppercase tracking-wide">
+                            Featured
+                        </span>
+                                            </div>
+                                            <p class="text-xs text-gray-500" th:text="${profile.user.email}">email@example.com</p>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td class="py-4 text-gray-600" th:text="${profile.currentTitle}">DevOps Engineer</td>
+
+                                <td class="py-4 text-gray-600" th:text="${profile.city}">Berlin</td>
+
+                                <td class="py-4 text-gray-600 max-w-xs truncate" th:title="${profile.skills}" th:text="${profile.skills}">Java, Spring...</td>
+
+                                <td class="py-4 text-gray-600" th:text="${profile.yearsExperience} + ' yrs'">5 yrs</td>
+
+                                <td class="py-4 pr-4 text-right">
+                                    <div class="flex flex-col items-end gap-2">
+                                        <a th:href="@{/employer/candidate/{userId}(userId=${profile.user.id})}"
+                                           class="text-teal-600 hover:text-teal-800 font-medium text-sm transition-colors"
+                                           style="text-decoration: none;">
+                                            View Profile
+                                        </a>
+
+                                        <div th:if="${isPremium}">
+                                            <form th:action="@{/employer/candidate/contact/{seekerId}(seekerId=${profile.user.id})}" method="post">
+                                                <button type="submit"
+                                                        class="bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold py-1.5 px-3 rounded shadow-sm flex items-center gap-2 transition-colors">
+                                                    <i class="fa-solid fa-comment-dots"></i> Contact Directly
+                                                </button>
+                                            </form>
+                                        </div>
+
+                                        <div th:unless="${isPremium}">
+                                            <button disabled class="bg-gray-200 text-gray-400 text-xs font-bold py-1.5 px-3 rounded cursor-not-allowed flex items-center gap-2">
+                                                <i class="fa-solid fa-lock"></i> Contact Directly
+                                            </button>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    const stats = /*[[${dashboardStats}]]*/ {};
+    const employerId = /*[[${user.id}]]*/ 0;
+    const employerFirstName = /*[[${user.firstName}]]*/ 'Employer';
+    const employerLastName = /*[[${user.lastName}]]*/ 'User';
+    const currentViewGlobal = /*[[${currentView}]]*/ 'overview';
+    const currentFilterGlobal = /*[[${currentFilter}]]*/ 'ALL';
+
+    // Chart Management
+    let myChart = null;
+    let currentChartFilter = 'all';
+
+    // Utility Functions
+    function showNotification(message, type = 'success') {
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.innerHTML = `
+            <div class="flex items-center">
+                <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-times-circle' : 'fa-info-circle'} mr-3"></i>
+                <span>${message}</span>
+            </div>
+        `;
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.style.animation = 'slideIn 0.3s ease-out reverse';
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
+    }
+
+    // Filter Data Function
+    function getFilteredData(filter) {
+        const baseData = {
+            applied: stats.APPLIED || 0,
+            reviewed: stats.REVIEWED || 0,
+            shortlisted: Math.round((stats.REVIEWED || 0) * 0.7),
+            interview: Math.round((stats.REVIEWED || 0) * 0.5),
+            accepted: stats.ACCEPTED || 0,
+            rejected: stats.REJECTED || 0
+        };
+
+        let multiplier = 1;
+        switch(filter) {
+            case 'today':
+                multiplier = 0.15;
+                break;
+            case 'last7days':
+                multiplier = 0.45;
+                break;
+            case 'last30days':
+                multiplier = 0.75;
+                break;
+            default:
+                multiplier = 1;
+        }
+
+        return Object.fromEntries(
+            Object.entries(baseData).map(([key, value]) => [key, Math.round(value * multiplier)])
+        );
+    }
+
+    // Initialize Chart
+    function initChart(filterType = 'all') {
+        const ctx = document.getElementById('applicationChart');
+        if (!ctx) return;
+
+        const filteredData = getFilteredData(filterType);
+
+        const gradient = ctx.getContext('2d').createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, 'rgba(0, 128, 128, 0.8)');
+        gradient.addColorStop(1, 'rgba(0, 128, 128, 0.1)');
+
+        if (myChart) {
+            myChart.destroy();
+        }
+
+        myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Applied', 'Reviewed', 'Shortlisted', 'Interview', 'Accepted', 'Rejected'],
+                datasets: [{
+                    label: 'Application Flow',
+                    data: Object.values(filteredData),
+                    backgroundColor: gradient,
+                    borderColor: '#008080',
+                    borderWidth: 3,
+                    tension: 0.4,
+                    fill: true,
+                    pointBackgroundColor: '#008080',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 3,
+                    pointRadius: 6,
+                    pointHoverRadius: 8,
+                    pointHoverBackgroundColor: '#006666',
+                    pointHoverBorderWidth: 4
+                },
+                    {
+                        label: 'Trend',
+                        data: Object.values(filteredData).map(v => Math.round(v * (0.7 + Math.random() * 0.3))),
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderColor: '#3b82f6',
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        tension: 0.4,
+                        fill: false,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            padding: 20,
+                            font: {
+                                size: 12,
+                                family: 'Inter'
+                            },
+                            usePointStyle: true
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        padding: 12,
+                        cornerRadius: 8,
+                        titleFont: {
+                            size: 14,
+                            weight: 'bold'
+                        },
+                        bodyFont: {
+                            size: 13
+                        },
+                        displayColors: true
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            font: {
+                                size: 11,
+                                family: 'Inter'
+                            },
+                            color: '#64748b'
+                        }
+                    },
+                    y: {
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)',
+                            drawBorder: false
+                        },
+                        ticks: {
+                            font: {
+                                size: 11,
+                                family: 'Inter'
+                            },
+                            color: '#64748b',
+                            padding: 10
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Export Functions
+    function exportChart(format) {
+        const currentDate = '2025-11-12';
+        const currentUser = 'anassbtk';
+
+        if (format === 'png') {
+            const link = document.createElement('a');
+            link.download = `application-analytics-${currentDate}-${currentUser}.png`;
+            link.href = myChart.toBase64Image();
+            link.click();
+            showNotification('Chart exported as PNG successfully!', 'success');
+
+        } else if (format === 'csv') {
+            const data = getFilteredData(currentChartFilter);
+            let csv = 'Stage,Applications,Percentage\n';
+            const total = Object.values(data).reduce((a, b) => a + b, 0) || 1;
+
+            Object.entries(data).forEach(([key, value]) => {
+                csv += `${key.charAt(0).toUpperCase() + key.slice(1)},${value},${((value/total)*100).toFixed(1)}%\n`;
+            });
+
+            csv += `\nGenerated: 2025-11-12 20:15:00 UTC\n`;
+            csv += `User: anassbtk\n`;
+            csv += `Filter: ${currentChartFilter}`;
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const link = document.createElement('a');
+            link.download = `application-analytics-${currentDate}-${currentUser}.csv`;
+            link.href = window.URL.createObjectURL(blob);
+            link.click();
+            showNotification('Data exported as CSV successfully!', 'success');
+
+        } else if (format === 'json') {
+            const exportData = {
+                metadata: {
+                    timestamp: '2025-11-12T20:15:00Z',
+                    user: 'anassbtk',
+                    filter: currentChartFilter
+                },
+                data: getFilteredData(currentChartFilter),
+                summary: {
+                    totalApplications: stats.TOTAL_APPLICATIONS || 0,
+                    conversionRate: ((stats.ACCEPTED || 0) / (stats.TOTAL_APPLICATIONS || 1) * 100).toFixed(2) + '%'
+                }
+            };
+
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+            const link = document.createElement('a');
+            link.download = `application-analytics-${currentDate}-${currentUser}.json`;
+            link.href = window.URL.createObjectURL(blob);
+            link.click();
+            showNotification('Data exported as JSON successfully!', 'success');
+        }
+    }
+
+    // Apply Filter
+    function applyFilter(filter) {
+        currentChartFilter = filter;
+        initChart(filter);
+
+        const filterText = {
+            'all': 'All Time',
+            'last30days': 'Last 30 Days',
+            'last7days': 'Last 7 Days',
+            'today': 'Today'
+        };
+
+        showNotification(`Filter applied: ${filterText[filter]}`, 'info');
+    }
+
+    // Setup Event Handlers
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize Chart
+        initChart();
+
+        // Export Button
+        const exportBtn = document.getElementById('export-btn');
+        if (exportBtn) {
+            exportBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+
+                let dropdown = document.getElementById('export-dropdown');
+                if (dropdown) {
+                    dropdown.remove();
+                    return;
+                }
+
+                dropdown = document.createElement('div');
+                dropdown.id = 'export-dropdown';
+                dropdown.className = 'dropdown-menu';
+                dropdown.style.top = '100%';
+                dropdown.style.left = '0';
+                dropdown.style.marginTop = '8px';
+                dropdown.innerHTML = `
+                    <button onclick="exportChart('png')" class="flex items-center text-gray-700">
+                        <i class="fas fa-image mr-3 text-teal-600"></i>Export as PNG
+                    </button>
+                    <button onclick="exportChart('csv')" class="flex items-center text-gray-700">
+                        <i class="fas fa-file-csv mr-3 text-green-600"></i>Export as CSV
+                    </button>
+                    <button onclick="exportChart('json')" class="flex items-center text-gray-700">
+                        <i class="fas fa-code mr-3 text-blue-600"></i>Export as JSON
+                    </button>
+                `;
+
+                this.parentElement.appendChild(dropdown);
+            });
+        }
+
+        // Filter Button
+        const filterBtn = document.getElementById('filter-btn');
+        if (filterBtn) {
+            filterBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+
+                let dropdown = document.getElementById('filter-dropdown');
+                if (dropdown) {
+                    dropdown.remove();
+                    return;
+                }
+
+                dropdown = document.createElement('div');
+                dropdown.id = 'filter-dropdown';
+                dropdown.className = 'dropdown-menu';
+                dropdown.style.top = '100%';
+                dropdown.style.right = '0';
+                dropdown.style.marginTop = '8px';
+                dropdown.innerHTML = `
+                    <button onclick="applyFilter('all')" class="flex items-center justify-between text-gray-700">
+                        <span><i class="fas fa-calendar-alt mr-2"></i>All Time</span>
+                        ${currentChartFilter === 'all' ? '<i class="fas fa-check text-teal-600"></i>' : ''}
+                    </button>
+                    <button onclick="applyFilter('last30days')" class="flex items-center justify-between text-gray-700">
+                        <span><i class="fas fa-calendar-week mr-2"></i>Last 30 Days</span>
+                        ${currentChartFilter === 'last30days' ? '<i class="fas fa-check text-teal-600"></i>' : ''}
+                    </button>
+                    <button onclick="applyFilter('last7days')" class="flex items-center justify-between text-gray-700">
+                        <span><i class="fas fa-calendar-day mr-2"></i>Last 7 Days</span>
+                        ${currentChartFilter === 'last7days' ? '<i class="fas fa-check text-teal-600"></i>' : ''}
+                    </button>
+                    <button onclick="applyFilter('today')" class="flex items-center justify-between text-gray-700">
+                        <span><i class="fas fa-clock mr-2"></i>Today</span>
+                        ${currentChartFilter === 'today' ? '<i class="fas fa-check text-teal-600"></i>' : ''}
+                    </button>
+                `;
+
+                this.parentElement.appendChild(dropdown);
+            });
+        }
+
+        // Close dropdowns on outside click
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('#export-btn') && !e.target.closest('#export-dropdown')) {
+                const dropdown = document.getElementById('export-dropdown');
+                if (dropdown) dropdown.remove();
+            }
+            if (!e.target.closest('#filter-btn') && !e.target.closest('#filter-dropdown')) {
+                const dropdown = document.getElementById('filter-dropdown');
+                if (dropdown) dropdown.remove();
+            }
+        });
+    });
+    /*]]>*/
+</script>
+<script src="/js/employer-dashboard.js"></script>
+</body>
+</html>

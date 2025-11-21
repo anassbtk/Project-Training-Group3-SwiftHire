@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Post New Job | SwiftHire</title>
+
+    <link rel="icon" type="image/png" th:href="@{/images/nav.png}">
+
+    <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}"/>
+    <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : ''}"/>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
+
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        // Pass dashboard stats (even if empty) to prevent JS errors
+        const stats = /*[[${dashboardStats}]]*/ {};
+        // Pass global vars for employer-dashboard.js
+        const employerId = /*[[${user.id}]]*/ 0;
+        const employerFirstName = /*[[${user.firstName}]]*/ 'Employer';
+        const employerLastName = /*[[${user.lastName}]]*/ 'User';
+        const currentViewGlobal = 'jobs'; // Set this page's view
+        const currentFilterGlobal = /*[[${currentFilter}]]*/ 'ALL';
+        /*]]>*/
+    </script>
+
+    <script>
+        // Tailwind config to preserve theme
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        teal: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            500: '#008080',
+                            600: '#007a7a',
+                            700: '#006666',
+                            800: '#005050',
+                            900: '#003c3c'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root { --teal: #008080; --accent-1: #00b3b3; --accent-2: #007a7a; }
+
+        /* Page background with soft radial texture */
+        body {
+            background: radial-gradient(1200px 400px at 10% 10%, rgba(0,179,179,0.03), transparent 8%),
+            radial-gradient(900px 300px at 90% 85%, rgba(0,122,122,0.02), transparent 6%),
+            linear-gradient(180deg,#f9fcfb 0%, #eef6f6 100%);
+            font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+        }
+
+        /* Sidebar same as before (fragment include) */
+        .sidebar { background: var(--teal); height: 100vh; position: fixed; left: 0; top: 0; width: 16rem; overflow-y: auto; }
+
+        /* Glass card, but with subtle border animation and unique corner flourish */
+        .glass-card {
+            background: linear-gradient(180deg, rgba(255,255,255,0.88), rgba(255,255,255,0.82));
+            border: 1px solid rgba(10,128,128,0.06);
+            box-shadow: 0 12px 40px rgba(8,40,40,0.06);
+            border-radius: 16px;
+            position: relative;
+            overflow: visible;
+        }
+        .glass-card::after {
+            content: '';
+            position: absolute;
+            right: -32px;
+            top: -32px;
+            width: 96px;
+            height: 96px;
+            background: conic-gradient(from 200deg at 50% 50%, rgba(0,179,179,0.08), rgba(0,122,122,0.03));
+            transform: rotate(18deg);
+            border-radius: 24px;
+            pointer-events: none;
+            filter: blur(6px);
+            opacity: 0.95;
+        }
+
+        .input-field { background: #ffffff; border: 1px solid #e7f0ef; transition: all .14s; }
+        .input-field:focus { border-color: var(--teal); box-shadow: 0 0 0 6px rgba(0,128,128,0.06); outline: none; }
+
+        /* Fancy animated heading gradient */
+        .brand-heading {
+            background: linear-gradient(90deg, var(--accent-1), var(--teal), #00cfcf);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            background-size: 200% 100%;
+            animation: slideGradient 6s linear infinite;
+        }
+        @keyframes slideGradient { 0% { background-position: 0% } 50% { background-position: 100% } 100% { background-position: 0% } }
+
+        /* Uploader styles with animated border and subtle pulsing icon */
+        .uploader {
+            border-radius: 12px;
+            border: 1px dashed rgba(3,60,60,0.06);
+            padding: 1rem;
+            transition: border-color .12s, transform .08s;
+            background: linear-gradient(180deg, rgba(255,255,255,0.65), rgba(255,255,255,0.6));
+            cursor: pointer;
+        }
+        .uploader.dragover {
+            border-color: rgba(0,179,179,0.5);
+            transform: translateY(-4px);
+        }
+        .uploader .upload-icon {
+            color: var(--teal);
+            animation: pulse 2.2s infinite;
+        }
+        @keyframes pulse { 0% { transform: scale(1) } 50% { transform: scale(1.06) } 100% { transform: scale(1) } }
+
+        .logo-preview { width:72px; height:72px; border-radius:12px; object-fit:cover; border:1px solid #e6eef0; background:white; }
+
+        /* Skill chips */
+        .skill-chip { background: rgba(0,179,179,0.08); color: #055; padding: .35rem .6rem; border-radius:999px; display:inline-flex; align-items:center; gap:.4rem; font-size:.9rem; }
+
+        /* Animated submit with check icon transition */
+        .btn-primary {
+            background: linear-gradient(90deg,var(--accent-1), var(--accent-2));
+            color: white;
+            box-shadow: 0 8px 30px rgba(0,128,128,0.12);
+            transition: transform .12s, box-shadow .12s, opacity .12s;
+        }
+        .btn-primary:hover { transform: translateY(-3px); }
+
+        /* Confirmation overlay / toast */
+        .overlay {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 60;
+            background: rgba(4,6,7,0.36);
+            backdrop-filter: blur(4px);
+        }
+        .overlay.show { display: flex; }
+        .confirm-card {
+            background: linear-gradient(180deg, #ffffff, #f7fffe);
+            padding: 1.25rem 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(2,45,45,0.18);
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            max-width: 560px;
+            width: 92%;
+        }
+        .check {
+            width:56px; height:56px; border-radius: 12px; display:flex; align-items:center; justify-content:center; background: linear-gradient(180deg,#00b3b3,#007a7a); color:white; font-size:22px;
+            transform: scale(0);
+            animation: popIn .42s forwards .06s;
+        }
+        @keyframes popIn { to { transform: scale(1) } }
+
+        /* small success toast anchored top-right */
+        .toast {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 70;
+            display: none;
+            min-width: 260px;
+        }
+        .toast.show { display: block; }
+
+        /* Preview Markdown Styling Fix */
+        #previewDesc ul { list-style-type: disc; margin-left: 1.5em; margin-bottom: 1em; }
+        #previewDesc ol { list-style-type: decimal; margin-left: 1.5em; margin-bottom: 1em; }
+        #previewDesc h1, #previewDesc h2, #previewDesc h3 { font-weight: bold; margin-top: 1em; margin-bottom: 0.5em; color: #006666; }
+        #previewDesc p { margin-bottom: 0.8em; }
+        #previewDesc strong { font-weight: 700; color: #005555; }
+
+        /* Responsive adjustments */
+        @media (max-width: 767px) {
+            .main-content-wrapper { margin-left: 0; width:100%; }
+            .sidebar { position:relative; width:100%; height:auto; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+<div class="flex">
+
+    <div th:replace="~{/employer/dashboard :: sidebar('jobs')}"></div>
+
+    <main class="main-content-wrapper flex-1 min-h-screen lg:ml-64 p-6">
+        <div class="max-w-6xl mx-auto">
+            <header class="mb-6 flex items-start justify-between gap-6">
+                <div>
+                    <h1 class="text-3xl font-extrabold brand-heading">Post a Distinctive Job Listing</h1>
+                    <p class="text-gray-600 mt-1">Craft a listing that attracts attention — use the preview to tune title, perks and visuals.</p>
+                </div>
+                <div class="hidden md:block text-sm text-gray-600">Live preview and instant confirmation included</div>
+            </header>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                <section class="lg:col-span-8">
+                    <form id="postJobForm" th:action="@{/employer/jobs/new}" th:object="${job}" method="post" enctype="multipart/form-data"
+                          class="glass-card p-6 space-y-6" aria-labelledby="form-title">
+
+                        <h2 id="form-title" class="sr-only">Post new job form</h2>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                            <div class="col-span-2">
+                                <div class="flex items-start gap-4">
+                                    <div>
+                                        <img id="logoPreviewLarge" alt="Company logo preview" class="logo-preview hidden" src="">
+                                    </div>
+                                    <div>
+                                        <label class="text-lg font-semibold text-teal-700">Company Branding</label>
+                                        <p class="text-sm text-gray-600 mt-1">Logo will appear on your public profile and job cards.</p>
+                                    </div>
+                                </div>
+
+                                <div id="uploader" class="uploader mt-4" role="button" tabindex="0" aria-label="Upload company logo (drag & drop or click)">
+                                    <input id="logoFile" name="logoFile" type="file" accept="image/png, image/jpeg" class="sr-only" onchange="handleLogoFile(this)">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-4">
+                                            <div class="flex items-center gap-3">
+                                                <button type="button" id="chooseBtn" class="btn-primary px-3 py-2 rounded-md text-sm">
+                                                    <i class="fa-solid fa-upload upload-icon mr-2"></i>Choose file
+                                                </button>
+                                                <div id="fileMeta" class="text-sm text-gray-600">No file chosen</div>
+                                            </div>
+                                        </div>
+                                        <div class="text-xs text-gray-500">PNG / JPG, max 3MB</div>
+                                    </div>
+                                    <div class="mt-3 text-sm text-gray-600">Or drag & drop the logo anywhere here.</div>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-center md:justify-end">
+                                <div class="text-center">
+                                    <div class="text-sm font-medium text-gray-700">Preview</div>
+                                    <img id="logoPreviewSmall" class="logo-preview mt-3 hidden" alt="logo small preview" src="">
+                                    <div id="removeLogoWrap" class="mt-2 hidden">
+                                        <button type="button" class="text-sm text-red-500 underline" onclick="removeLogo()">Remove</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <h3 class="text-lg font-semibold text-teal-700">Job Details</h3>
+                                <div class="text-sm text-gray-500">Preview updates live</div>
+                            </div>
+
+                            <div class="grid grid-cols-1 gap-4">
+                                <div>
+                                    <label for="title" class="block text-sm font-medium text-gray-700">Job Title <span class="text-red-500">*</span></label>
+                                    <input id="title" name="title" type="text" th:field="*{title}" class="input-field w-full p-3 rounded-md text-lg" placeholder="e.g., Senior Backend Engineer" required oninput="updatePreview()" aria-required="true">
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label for="jobType" class="block text-sm font-medium text-gray-700">Job Type <span class="text-red-500">*</span></label>
+                                        <select id="jobType" name="jobType" th:field="*{jobType}" class="input-field w-full p-3 rounded-md" required onchange="updatePreview()" aria-required="true">
+                                            <option value="">Select Job Type</option>
+                                            <option th:each="type : ${jobTypes}" th:value="${type}" th:text="${type}"></option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label for="jobCategory" class="block text-sm font-medium text-gray-700">Category</label>
+                                        <select id="jobCategory" name="jobCategory" th:field="*{jobCategory}" class="input-field w-full p-3 rounded-md" onchange="updatePreview()">
+                                            <option value="">Select category (optional)</option>
+                                            <option th:each="cat : ${jobCategories}" th:value="${cat}" th:text="${cat}" th:selected="${cat == job.jobCategory}"></option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label for="locationCity" class="block text-sm font-medium text-gray-700">City / Location</label>
+                                        <input id="locationCity" name="locationCity" type="text" th:field="*{locationCity}" class="input-field w-full p-3 rounded-md" placeholder="Remote, Tokyo, New York" oninput="updatePreview()">
+                                    </div>
+
+                                    <div>
+                                        <label for="remoteOptionPlaceholder" class="block text-sm font-medium text-gray-700">Remote Option</label>
+                                        <div class="mt-2 text-sm text-gray-500">Use the checkbox below to indicate if remote/hybrid is offered.</div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div class="flex justify-between items-end mb-2">
+                                        <label for="description" class="block text-sm font-medium text-gray-700">Job Description (detailed) <span class="text-red-500">*</span></label>
+
+                                        <button type="button" onclick="generateAiDescription()"
+                                                class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded border border-purple-200 hover:bg-purple-200 transition-colors flex items-center gap-1"
+                                                title="Available for Premium users">
+                                            <i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Generate (Premium)
+                                        </button>
+                                    </div>
+                                    <textarea id="description" name="description" th:field="*{description}" rows="7" required class="input-field w-full p-3 rounded-md" oninput="updateCharCount()" aria-required="true"></textarea>
+                                    <div class="flex items-center justify-between mt-2">
+                                        <div class="char-count text-sm text-gray-600"><span id="descCount">0</span>/2000</div>
+                                        <div class="text-sm text-gray-500">Be descriptive — highlight perks and culture.</div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Required Skills</label>
+                                    <div class="mt-2">
+                                        <div id="skillArea" class="flex gap-2 flex-wrap"></div>
+                                        <div class="flex items-center gap-2 mt-3">
+                                            <input id="skillInput" type="text" placeholder="Add a skill and press Enter or comma" class="input-field p-2 rounded-md w-full" onkeydown="skillKey(event)">
+                                            <button type="button" class="ml-2 px-3 py-2 rounded-md border border-gray-200 text-gray-700" onclick="addSkillFromInput()">Add</button>
+                                        </div>
+                                        <input type="hidden" th:field="*{requiredSkills}" id="requiredSkillsHidden">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <h3 class="text-lg font-semibold text-teal-700">Salary & Options</h3>
+                                <div class="text-sm text-gray-500">Transparent ranges attract better applicants</div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                                <div>
+                                    <label for="salaryMin" class="block text-sm font-medium text-gray-700">Min Salary (USD)</label>
+                                    <input id="salaryMin" name="salaryMin" type="number" th:field="*{salaryMin}" class="input-field p-3 rounded-md w-full" min="0" step="1000" onchange="syncSalary('min')" oninput="syncSalary('min')">
+                                </div>
+
+                                <div>
+                                    <label for="salaryMax" class="block text-sm font-medium text-gray-700">Max Salary (USD)</label>
+                                    <input id="salaryMax" name="salaryMax" type="number" th:field="*{salaryMax}" class="input-field p-3 rounded-md w-full" min="0" step="1000" onchange="syncSalary('max')" oninput="syncSalary('max')">
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-3 mt-4">
+                                <input id="remoteOption" name="remoteOption" type="checkbox" th:field="*{remoteOption}" class="h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+                                <label for="remoteOption" class="text-sm font-medium text-gray-700">Offer Remote / Hybrid Work</label>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-between items-center pt-2">
+                            <div class="text-sm text-gray-500">Preview panel updates as you edit.</div>
+                            <div class="flex gap-3">
+                                <a href="#" class="px-3 py-2 rounded-md border border-gray-200 text-gray-700" onclick="resetForm(); return false;">Reset</a>
+                                <button type="submit" id="submitBtn" class="btn-primary font-semibold py-3 px-5 rounded-md flex items-center gap-3">
+                                    <span id="submitText">Submit Job for Approval</span>
+                                    <i id="submitSpinner" class="fa-solid fa-spinner fa-spin hidden"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <div class="mt-4 max-w-3xl">
+                        <div th:if="${successMessage}" class="bg-green-50 border-l-4 border-green-400 text-green-800 p-4 rounded-lg mb-2" role="status" aria-live="polite">
+                            <p class="font-semibold">Success</p>
+                            <p th:text="${successMessage}"></p>
+                        </div>
+                        <div th:if="${errorMessage}" class="bg-red-50 border-l-4 border-red-400 text-red-800 p-4 rounded-lg mb-2" role="alert" aria-live="assertive">
+                            <p class="font-semibold">Error</p>
+                            <p th:text="${errorMessage}"></p>
+                        </div>
+                    </div>
+                </section>
+
+                <aside class="lg:col-span-4">
+                    <div class="glass-card p-5 sticky top-6">
+                        <div class="flex items-start gap-4">
+                            <img id="previewLogo" class="logo-preview hidden" alt="Preview logo" src="">
+                            <div>
+                                <div id="previewTitle" class="text-xl font-bold text-gray-800">Job Title Preview</div>
+                                <div id="previewMeta" class="text-sm text-gray-500 mt-1">Type • Location</div>
+                            </div>
+                        </div>
+
+                        <div id="previewSkills" class="flex gap-2 flex-wrap mt-4"></div>
+
+                        <div class="mt-4 text-sm text-gray-700" id="previewDesc">Short job description preview will appear here as you type. Keep it punchy and focused on impact.</div>
+
+                        <div class="mt-4 flex items-center justify-between">
+                            <div class="text-sm text-gray-600">Salary</div>
+                            <div id="previewSalary" class="text-sm font-semibold text-gray-800">$—</div>
+                        </div>
+
+                        <div class="mt-4 pt-4 border-t border-gray-100 text-xs text-gray-500">
+                            This is a preview. Final listing will follow site guidelines on approval.
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </div>
+    </main>
+</div>
+
+<div id="overlay" class="overlay" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="confirm-card" role="document">
+        <div class="check" aria-hidden="true">
+            <i class="fa-solid fa-check"></i>
+        </div>
+        <div>
+            <div id="overlayTitle" class="text-lg font-semibold text-gray-800">Submission received</div>
+            <div id="overlayMessage" class="text-sm text-gray-600 mt-1">Your job has been submitted for approval. We will notify you shortly.</div>
+        </div>
+    </div>
+</div>
+
+<div id="toast" class="toast" role="status" aria-live="polite">
+    <div class="glass-card p-3 flex items-center gap-3">
+        <div class="w-9 h-9 rounded-md bg-green-500 text-white flex items-center justify-center"><i class="fa-solid fa-check"></i></div>
+        <div>
+            <div id="toastTitle" class="text-sm font-semibold">Submitted</div>
+            <div id="toastText" class="text-xs text-gray-600">Your job has been sent for approval.</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Initialize Showdown converter (ADDED HERE)
+    const converter = new showdown.Converter();
+
+    // --- Elements ---
+    const uploader = document.getElementById('uploader');
+    const logoFile = document.getElementById('logoFile');
+    const fileMeta = document.getElementById('fileMeta');
+    const previewLogo = document.getElementById('previewLogo');
+    const logoPreviewSmall = document.getElementById('logoPreviewSmall');
+    const logoPreviewLarge = document.getElementById('logoPreviewLarge');
+    const removeLogoWrap = document.getElementById('removeLogoWrap');
+    const chooseBtn = document.getElementById('chooseBtn');
+    const form = document.getElementById('postJobForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const submitText = document.getElementById('submitText');
+    const submitSpinner = document.getElementById('submitSpinner');
+    const overlay = document.getElementById('overlay');
+    const toast = document.getElementById('toast');
+
+    // Quick helpers to show/hide overlay & toast
+    function showOverlay(title, message) {
+        document.getElementById('overlayTitle').textContent = title;
+        document.getElementById('overlayMessage').textContent = message;
+        overlay.classList.add('show');
+        overlay.setAttribute('aria-hidden', 'false');
+    }
+    function hideOverlay() {
+        overlay.classList.remove('show');
+        overlay.setAttribute('aria-hidden', 'true');
+    }
+    function showToast(title, message, timeout = 3500) {
+        document.getElementById('toastTitle').textContent = title;
+        document.getElementById('toastText').textContent = message;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), timeout);
+    }
+
+    // --- Uploader interactions (drag & drop + file chooser) ---
+    chooseBtn.addEventListener('click', () => logoFile.click());
+    uploader.addEventListener('click', () => logoFile.click());
+
+    ['dragenter', 'dragover'].forEach(ev => {
+        uploader.addEventListener(ev, (e) => { e.preventDefault(); e.stopPropagation(); uploader.classList.add('dragover'); });
+    });
+    ['dragleave', 'drop'].forEach(ev => {
+        uploader.addEventListener(ev, (e) => { e.preventDefault(); e.stopPropagation(); uploader.classList.remove('dragover'); });
+    });
+    uploader.addEventListener('drop', (e) => {
+        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
+            logoFile.files = e.dataTransfer.files;
+            handleLogoFile(logoFile);
+        }
+    });
+
+    function handleLogoFile(input) {
+        const file = input.files && input.files[0];
+        if (!file) {
+            fileMeta.textContent = 'No file chosen';
+            logoPreviewSmall.classList.add('hidden');
+            logoPreviewLarge.classList.add('hidden');
+            previewLogo.classList.add('hidden');
+            removeLogoWrap.classList.add('hidden');
+            return;
+        }
+        const maxMB = 3;
+        if (file.size > maxMB * 1024 * 1024) {
+            fileMeta.textContent = 'File too large (max 3MB)';
+            return;
+        }
+        fileMeta.textContent = file.name;
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                logoPreviewSmall.src = ev.target.result;
+                logoPreviewLarge.src = ev.target.result;
+                previewLogo.src = ev.target.result;
+                logoPreviewSmall.classList.remove('hidden');
+                logoPreviewLarge.classList.remove('hidden');
+                previewLogo.classList.remove('hidden');
+                removeLogoWrap.classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function removeLogo() {
+        logoFile.value = '';
+        fileMeta.textContent = 'No file chosen';
+        logoPreviewSmall.src = '';
+        logoPreviewLarge.src = '';
+        previewLogo.src = '';
+        logoPreviewSmall.classList.add('hidden');
+        logoPreviewLarge.classList.add('hidden');
+        previewLogo.classList.add('hidden');
+        removeLogoWrap.classList.add('hidden');
+    }
+
+    // --- Skills chips implementation ---
+    const skillArea = document.getElementById('skillArea');
+    const skillInput = document.getElementById('skillInput');
+    const requiredSkillsHidden = document.getElementById('requiredSkillsHidden');
+    const previewSkills = document.getElementById('previewSkills');
+    let skills = [];
+
+    function renderSkills() {
+        skillArea.innerHTML = '';
+        previewSkills.innerHTML = '';
+        skills.forEach((s, idx) => {
+            const chip = document.createElement('span');
+            chip.className = 'skill-chip';
+            chip.textContent = s;
+            const btn = document.createElement('button');
+            btn.setAttribute('aria-label', 'Remove skill ' + s);
+            btn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+            btn.onclick = () => { skills.splice(idx,1); syncSkills(); };
+            chip.appendChild(btn);
+            skillArea.appendChild(chip);
+
+            const pchip = chip.cloneNode(true);
+            pchip.querySelector('button').remove();
+            previewSkills.appendChild(pchip);
+        });
+        requiredSkillsHidden.value = skills.join(', ');
+    }
+
+    function addSkillFromInput() {
+        const val = skillInput.value.trim();
+        if (!val) return;
+        const parts = val.split(',').map(s => s.trim()).filter(Boolean);
+        parts.forEach(p => { if (!skills.includes(p)) skills.push(p); });
+        skillInput.value = '';
+        renderSkills();
+        updatePreview();
+    }
+
+    function skillKey(e) {
+        if (e.key === 'Enter' || e.key === ',') {
+            e.preventDefault();
+            addSkillFromInput();
+        } else if (e.key === 'Backspace' && skillInput.value === '') {
+            skills.pop();
+            renderSkills();
+            updatePreview();
+        }
+    }
+
+    // --- Description char count & preview ---
+    const desc = document.getElementById('description');
+    const descCount = document.getElementById('descCount');
+
+    function updateCharCount() {
+        const len = desc.value.length;
+        descCount.textContent = len;
+        updatePreview();
+    }
+
+    // --- Salary sync ---
+    function syncSalary(which) {
+        const minEl = document.getElementById('salaryMin');
+        const maxEl = document.getElementById('salaryMax');
+        let min = parseInt(minEl.value) || 0;
+        let max = parseInt(maxEl.value) || 0;
+        if (which === 'min' && max && min > max) { maxEl.value = min; max = min; }
+        if (which === 'max' && min && max < min) { minEl.value = max; min = max; }
+        updatePreview();
+    }
+
+    // --- Live preview updates ---
+    function updatePreview() {
+        const title = document.getElementById('title').value.trim();
+        const type = document.getElementById('jobType').value;
+        const location = document.getElementById('locationCity').value.trim();
+        const description = document.getElementById('description').value.trim();
+        const previewTitle = document.getElementById('previewTitle');
+        const previewMeta = document.getElementById('previewMeta');
+        const previewDesc = document.getElementById('previewDesc');
+        const previewSalary = document.getElementById('previewSalary');
+
+        previewTitle.textContent = title || 'Job Title Preview';
+        previewMeta.textContent = ((type || 'Type') + ' • ' + (location || 'Location'));
+
+        // UPDATED: Parse Markdown into HTML for preview
+        if (description) {
+            const htmlContent = converter.makeHtml(description);
+            previewDesc.innerHTML = htmlContent;
+        } else {
+            previewDesc.innerHTML = 'Short job description preview will appear here as you type. Keep it punchy and focused on impact.';
+        }
+
+        const min = document.getElementById('salaryMin').value;
+        const max = document.getElementById('salaryMax').value;
+        if (min && max) {
+            previewSalary.textContent = '$' + Number(min).toLocaleString() + ' – $' + Number(max).toLocaleString();
+        } else if (min && !max) {
+            previewSalary.textContent = '$' + Number(min).toLocaleString() + ' – —';
+        } else if (!min && max) {
+            previewSalary.textContent = '— – $' + Number(max).toLocaleString();
+        } else {
+            previewSalary.textContent = '—';
+        }
+    }
+
+    // Keep hidden input updated before submit
+    function syncSkills() {
+        requiredSkillsHidden.value = skills.join(', ');
+        renderSkills();
+    }
+
+    // Reset helper
+    function resetForm() {
+        form.reset();
+        skills = [];
+        renderSkills();
+        removeLogo();
+        updateCharCount();
+        updatePreview();
+    }
+
+    // --- AJAX submit with confirmation message ---
+    form.addEventListener('submit', function (e) {
+        e.preventDefault(); // we'll perform an async submit to display confirmation
+        // disable submit to prevent duplicate submissions
+        submitBtn.disabled = true;
+        submitSpinner.classList.remove('hidden');
+        submitText.textContent = 'Submitting...';
+
+        // ensure skills hidden field is up to date
+        requiredSkillsHidden.value = skills.join(', ');
+
+        const action = form.getAttribute('action') || window.location.href;
+        const method = (form.getAttribute('method') || 'post').toUpperCase();
+        const formData = new FormData(form);
+
+        // send the form via fetch (multipart form)
+        fetch(action, {
+            method: method,
+            body: formData,
+            credentials: 'same-origin',
+            headers: {
+                // Do not set content-type (let browser set boundary for FormData)
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            redirect: 'follow'
+        }).then(async response => {
+            submitSpinner.classList.add('hidden');
+            submitBtn.disabled = false;
+            submitText.textContent = 'Submit Job for Approval';
+
+            // Try to interpret response
+            const ctype = response.headers.get('content-type') || '';
+            if (response.ok) {
+                // If server returns JSON we can extract a message
+                if (ctype.includes('application/json')) {
+                    try {
+                        const json = await response.json();
+                        const msg = json.message || 'Your job has been submitted for approval.';
+                        showOverlay('Submission received', msg);
+                        showToast('Submitted', msg);
+                    } catch (err) {
+                        showOverlay('Submission received', 'Your job has been submitted for approval. We will notify you shortly.');
+                        showToast('Submitted', 'Your job has been sent for approval.');
+                    }
+                } else {
+                    // For HTML responses, show simple confirmation then navigate to response URL after a short delay
+                    showOverlay('Submission received', 'Your job has been submitted for approval. Redirecting...');
+                    showToast('Submitted', 'Your job has been sent for approval.');
+                    // attempt to redirect to the final URL (response.url) after 1.6s
+                    setTimeout(() => {
+                        try {
+                            // If response led to a new page (redirect), navigate to that URL; otherwise reload to reflect server side state
+                            if (response.url && response.url !== window.location.href) {
+                                window.location.href = response.url;
+                            } else {
+                                window.location.reload();
+                            }
+                        } catch (_) {
+                            window.location.reload();
+                        }
+                    }, 1600);
+                }
+            } else {
+                // Not ok: try to parse JSON error message, otherwise show generic error
+                let errMsg = 'Submission failed. Please try again.';
+                if (ctype.includes('application/json')) {
+                    try {
+                        const json = await response.json();
+                        errMsg = json.message || errMsg;
+                    } catch (err) { /* ignore */ }
+                }
+                showOverlay('Submission error', errMsg);
+                showToast('Error', errMsg);
+            }
+        }).catch(err => {
+            submitSpinner.classList.add('hidden');
+            submitBtn.disabled = false;
+            submitText.textContent = 'Submit Job for Approval';
+            const errMsg = 'Network error while submitting. Please check your connection and try again.';
+            showOverlay('Submission error', errMsg);
+            showToast('Error', errMsg);
+        });
+    });
+
+    // Close overlay on click anywhere (or could be made confirm-only)
+    overlay.addEventListener('click', () => hideOverlay());
+
+    // Initialize preview and counters
+    renderSkills();
+    updateCharCount();
+    updatePreview();
+
+    // --- NEW: AI Generation Script ---
+    // --- NEW: AI Generation Script (Updated) ---
+    function generateAiDescription() {
+        // 1. Gather all inputs
+        const titleInput = document.getElementById('title');
+        const locationInput = document.getElementById('locationCity');
+        const jobTypeInput = document.getElementById('jobType');
+        const salaryMinInput = document.getElementById('salaryMin');
+        const salaryMaxInput = document.getElementById('salaryMax');
+
+        const descField = document.getElementById('description');
+
+        const title = titleInput.value;
+        const location = locationInput.value;
+        const jobType = jobTypeInput.value;
+        const salaryMin = salaryMinInput.value;
+        const salaryMax = salaryMaxInput.value;
+
+        if (!title) {
+            showToast("Input Required", "Please enter a Job Title first.");
+            titleInput.focus();
+            return;
+        }
+
+        // Visual feedback
+        const originalPlaceholder = descField.placeholder;
+        descField.placeholder = "✨ AI is reading your inputs and writing a description...";
+        descField.disabled = true;
+        descField.value = ""; // clear current
+
+        // Get CSRF
+        const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+        const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+
+        // 2. Send all data to backend
+        fetch('/employer/api/ai/generate-job-desc', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                [csrfHeader]: csrfToken
+            },
+            body: JSON.stringify({
+                title: title,
+                location: location,
+                jobType: jobType,
+                salaryMin: salaryMin,
+                salaryMax: salaryMax
+            })
+        })
+            .then(response => {
+                if (response.status === 403) throw new Error("Premium Feature: Please upgrade to use AI.");
+                if (!response.ok) throw new Error("Generation failed. Please try again.");
+                return response.json();
+            })
+            .then(data => {
+                if (data.description) {
+                    descField.value = data.description;
+                    updateCharCount(); // Update counter
+                    updatePreview();   // Update live preview
+                    showToast("Success", "Description generated based on your inputs!");
+                }
+            })
+            .catch(err => {
+                showToast("Error", err.message);
+            })
+            .finally(() => {
+                descField.disabled = false;
+                descField.placeholder = originalPlaceholder;
+            });
+    }
+</script>
+
+<script src="/js/employer-dashboard.js"></script>
+
+</body>
+</html>

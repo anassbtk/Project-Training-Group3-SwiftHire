@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Edit Company Profile | SwiftHire</title>
+
+    <link rel="icon" type="image/png" th:href="@{/images/nav.png}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        // Pass global vars for sidebar/JS initialization
+        const employerId = /*[[${user.id}]]*/ 0;
+        const employerFirstName = /*[[${user.firstName}]]*/ 'Employer';
+        const employerLastName = /*[[${user.lastName}]]*/ 'User';
+        const currentViewGlobal = 'jobs'; // Context for sidebar activation
+        const currentFilterGlobal = 'ALL';
+        /*]]>*/
+    </script>
+
+    <script>
+        // Tailwind config to preserve theme (from original company_edit.html / new_job.html)
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        teal: {
+                            50: '#f0fdfa', 100: '#ccfbf1', 500: '#008080', 600: '#007a7a', 700: '#006666', 800: '#005050', 900: '#003c3c'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Styles copied from the job posting page to maintain consistent aesthetic */
+        :root { --teal: #008080; --accent-1: #00b3b3; --accent-2: #007a7a; }
+        body {
+            background: radial-gradient(1200px 400px at 10% 10%, rgba(0,179,179,0.03), transparent 8%),
+            radial-gradient(900px 300px at 90% 85%, rgba(0,122,122,0.02), transparent 6%),
+            linear-gradient(180deg,#f9fcfb 0%, #eef6f6 100%);
+        }
+        .glass-card {
+            background: linear-gradient(180deg, rgba(255,255,255,0.88), rgba(255,255,255,0.82));
+            border: 1px solid rgba(10,128,128,0.06);
+            box-shadow: 0 12px 40px rgba(8,40,40,0.06);
+            border-radius: 16px;
+            position: relative;
+            overflow: visible;
+        }
+        .glass-card::after {
+            content: ''; position: absolute; right: -32px; top: -32px; width: 96px; height: 96px;
+            background: conic-gradient(from 200deg at 50% 50%, rgba(0,179,179,0.08), rgba(0,122,122,0.03));
+            transform: rotate(18deg); border-radius: 24px; pointer-events: none; filter: blur(6px); opacity: 0.95;
+        }
+        .input-field { background: #ffffff; border: 1px solid #e7f0ef; transition: all .14s; }
+        .input-field:focus { border-color: var(--teal); box-shadow: 0 0 0 6px rgba(0,128,128,0.06); outline: none; }
+        .brand-heading {
+            background: linear-gradient(90deg, var(--accent-1), var(--teal), #00cfcf);
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+            background-size: 200% 100%; animation: slideGradient 6s linear infinite;
+        }
+        @keyframes slideGradient { 0% { background-position: 0% } 50% { background-position: 100% } 100% { background-position: 0% } }
+        .uploader { border-radius: 12px; border: 1px dashed rgba(3,60,60,0.06); padding: 1rem; transition: border-color .12s, transform .08s; background: linear-gradient(180deg, rgba(255,255,255,0.65), rgba(255,255,255,0.6)); cursor: pointer; }
+        .logo-preview { width:72px; height:72px; border-radius:12px; object-fit:cover; border:1px solid #e6eef0; background:white; }
+        .btn-primary { background: linear-gradient(90deg,var(--accent-1), var(--accent-2)); color: white; box-shadow: 0 8px 30px rgba(0,128,128,0.12); transition: transform .12s, box-shadow .12s, opacity .12s; }
+        .btn-primary:hover { background: var(--teal); transform: translateY(-3px); }
+        .sidebar { background: var(--teal); height: 100vh; position: fixed; left: 0; top: 0; width: 16rem; overflow-y: auto; }
+        .main-content-wrapper { margin-left: 16rem; width: calc(100% - 16rem); min-height: 100vh; }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+<div class="flex">
+
+    <div th:replace="~{/employer/dashboard :: sidebar('jobs')}"
+         th:with="user=${user}, companyName=${company.name}, companyLogoFilename=${company.logoFilename}"></div>
+
+    <main class="main-content-wrapper flex-1 min-h-screen p-6">
+        <div class="max-w-4xl mx-auto">
+            <header class="mb-6">
+                <h1 class="text-3xl font-extrabold brand-heading">Edit Company Profile</h1>
+                <p class="text-gray-600 mt-1">Update your public company details and branding.</p>
+            </header>
+
+            <div th:if="${successMessage}" class="bg-green-50 border-l-4 border-green-400 text-green-800 p-4 rounded-lg mb-4" role="status" aria-live="polite">
+                <p class="font-semibold">Success</p>
+                <p th:text="${successMessage}"></p>
+            </div>
+            <div th:if="${errorMessage}" class="bg-red-50 border-l-4 border-red-400 text-red-800 p-4 rounded-lg mb-4" role="alert" aria-live="assertive">
+                <p class="font-semibold">Error</p>
+                <p th:text="${errorMessage}"></p>
+            </div>
+            <form th:action="@{/employer/company/edit}" method="post" enctype="multipart/form-data" class="glass-card p-6 space-y-6" aria-labelledby="form-title">
+
+                <h2 id="form-title" class="sr-only">Edit Company Profile Form</h2>
+
+                <div>
+                    <div class="flex items-start gap-4">
+                        <img id="logoPreviewLarge"
+                             th:src="@{/employer/logos/download/{filename}(filename=${company.logoFilename})}"
+                             th:if="${company.logoFilename != null && !company.logoFilename.isBlank()}"
+                             th:alt="${company.name} + ' logo'"
+                             class="logo-preview">
+                        <div th:unless="${company.logoFilename != null && !company.logoFilename.isBlank()}"
+                             class="logo-preview bg-gray-100 flex items-center justify-center">
+                            <i class="fa-solid fa-building text-2xl text-gray-400"></i>
+                        </div>
+                        <div>
+                            <label for="logoFile" class="text-lg font-semibold text-teal-700">Company Logo</label>
+                            <p class="text-sm text-gray-600 mt-1">Upload a **new** logo to replace the current one. Max 3MB, PNG/JPG.</p>
+                        </div>
+                    </div>
+                    <div class="uploader mt-4" role="button" tabindex="0" onclick="document.getElementById('logoFile').click()">
+                        <input id="logoFile" name="logoFile" type="file" accept="image/png, image/jpeg" class="sr-only">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <span class="btn-primary px-3 py-2 rounded-md text-sm"><i class="fa-solid fa-upload mr-2"></i>Choose New File</span>
+                                <div id="fileMeta" class="text-sm text-gray-600">Current file: <span th:text="${company.logoFilename ?: 'None'}"></span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-lg font-semibold text-teal-700 mb-4">Company Information</h3>
+
+                    <div class="mb-4">
+                        <label for="name" class="block text-sm font-medium text-gray-700">Company Name</label>
+                        <input id="name" name="name" type="text" th:value="${company.name}" class="input-field w-full p-3 rounded-md text-lg" required>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="location" class="block text-sm font-medium text-gray-700">Headquarters Location</label>
+                        <input id="location" name="location" type="text" th:value="${company.location}" class="input-field w-full p-3 rounded-md" placeholder="e.g., Tokyo, Japan" required>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="description" class="block text-sm font-medium text-gray-700">Company Description</label>
+                        <textarea id="description" name="description" rows="5" class="input-field w-full p-3 rounded-md" required th:text="${company.description}"></textarea>
+                        <p class="text-xs text-gray-500 mt-1">A brief summary of your company, culture, and mission.</p>
+                    </div>
+                </div>
+
+                <div class="flex justify-end pt-2">
+                    <button type="submit" class="btn-primary font-semibold py-3 px-5 rounded-md flex items-center gap-3">
+                        <i class="fa-solid fa-save"></i>
+                        <span>Save Profile Changes</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+</div>
+
+<script src="/js/employer-dashboard.js"></script>
+<script>
+    // Simple script to update the file metadata text when a file is selected
+    document.getElementById('logoFile').addEventListener('change', function(e) {
+        const fileMeta = document.getElementById('fileMeta');
+        const file = e.target.files[0];
+        if (file) {
+            fileMeta.innerHTML = `New file: <b>${file.name}</b>`;
+        } else {
+            fileMeta.innerHTML = 'Current file: <span th:text="${company.logoFilename ?: 'None'}"></span>';
+        }
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us - SwiftHire</title>
+
+    <link rel="icon" type="image/png" th:href="@{/images/nav.png}">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
+
+    <script>
+        // --- Tailwind Config (using your correct 'theme-teal' color) ---
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'sans-serif']
+                    },
+                    colors: {
+                        'theme-teal': {
+                            DEFAULT: '#008080', // Logo-matched teal
+                            '500': '#008080',
+                            '600': '#006666', // A darker shade
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Apply the custom font */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f9fafb; /* Light gray background */
+        }
+
+        /* --- LOADER CSS REMOVED --- */
+
+        /* --- Modern Animation --- */
+        @keyframes fade-in-scale-up {
+            from { opacity: 0; transform: scale(0.98) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .animate-new {
+            animation: fade-in-scale-up 0.5s ease-out forwards;
+            opacity: 0;
+        }
+
+        /* --- #main-content CSS (with display:none) REMOVED --- */
+
+        /* Header profile pic styles */
+        .header-profile-pic {
+            width: 32px; height: 32px; border-radius: 50%;
+            object-fit: cover; border: 1px solid #ddd;
+        }
+        .header-profile-placeholder {
+            width: 32px; height: 32px; border-radius: 50%;
+            background-color: #008080; /* theme-teal */
+            color: white; display: inline-flex;
+            align-items: center; justify-content: center;
+            font-weight: bold; font-size: 0.9em;
+        }
+
+        /* NEW Team Card Style */
+        .team-card {
+            transition: all 0.3s ease;
+        }
+        .team-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,128,128,0.1); /* Teal shadow */
+        }
+    </style>
+</head>
+<body class="font-['Inter',_sans-serif]">
+
+<div id="main-content">
+
+    <header class="fixed top-0 left-0 w-full bg-white/90 backdrop-blur-sm shadow-md z-50 h-32">
+        <nav class="mx-auto flex max-w-7xl items-center justify-between p-4 lg:px-8 h-full">
+            <div class="flex lg:flex-1">
+                <a th:href="@{/}" class="-m-1.5 p-1.5 flex items-center gap-2">
+                    <img th:src="@{/images/logo.png}" alt="SwiftHire Logo" class="h-32 w-auto transform hover:scale-105 transition-transform duration-300">
+                </a>
+            </div>
+
+            <div class="hidden lg:flex lg:gap-x-12">
+                <a th:href="@{/}" class="text-sm font-semibold leading-6 text-gray-900 hover:text-theme-teal">Home</a>
+                <a th:href="@{/jobs/hub}" class="text-sm font-semibold leading-6 text-gray-900 hover:text-theme-teal">Find Jobs</a>
+                <a th:href="@{/about}" class="text-sm font-semibold leading-6 text-theme-teal">About</a>
+                <a th:href="@{/contact}" class="text-sm font-semibold leading-6 text-gray-900 hover:text-theme-teal">Contact</a>
+            </div>
+
+            <div class="hidden lg:flex lg:flex-1 lg:justify-end lg:items-center lg:gap-x-4">
+                <div sec:authorize="!isAuthenticated()">
+                    <a th:href="@{/login}" class="text-sm font-semibold leading-6 text-gray-900 hover:text-theme-teal">Sign in <span aria-hidden="true">&rarr;</span></a>
+                    <a th:href="@{/login(register=true)}"
+                       class="ml-4 rounded-md bg-theme-teal px-3.5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-theme-teal-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-teal">
+                        Register
+                    </a>
+                </div>
+
+                <div sec:authorize="isAuthenticated()" class="flex items-center gap-x-4">
+                    <a sec:authorize="hasRole('JOB_SEEKER')" th:href="@{/seeker/dashboard}" class="text-sm font-semibold leading-6 text-gray-900 hover:text-theme-teal">My Dashboard</a>
+                    <a sec:authorize="hasRole('EMPLOYER')" th:href="@{/employer/dashboard}" class="text-sm font-semibold leading-6 text-gray-900 hover:text-theme-teal">My Dashboard</a>
+                    <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin/dashboard}" class="text-sm font-semibold leading-6 text-gray-900 hover:text-theme-teal">My Dashboard</a>
+
+                    <a th:if="${user != null}"
+                       th:href="@{${user.role.name == 'JOB_SEEKER' ? '/seeker/profile/edit' : (user.role.name == 'EMPLOYER' ? '/employer/company/edit' : '/admin/dashboard')}}">
+                    </a>
+
+                    <form th:action="@{/logout}" method="post" class="inline">
+                        <button type="submit"
+                                class="rounded-md border border-theme-teal px-3.5 py-2 text-sm font-semibold text-theme-teal shadow-sm hover:bg-theme-teal/10">
+                            Logout
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="relative flex flex-col min-h-screen pt-32">
+
+        <div class="relative h-48 lg:h-64 w-full overflow-hidden animate-new" style="animation-delay: 0.1s;">
+            <div class="absolute inset-0 w-full h-full bg-cover bg-center"
+                 style="background-image: url('https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=2070&auto=format&fit=crop')">
+            </div>
+            <div class="absolute inset-0 bg-theme-teal/70"></div>
+            <div class="relative z-10 flex items-center justify-center h-full">
+                <h1 class="text-4xl lg:text-5xl font-bold text-white tracking-tight">About Us</h1>
+            </div>
+        </div>
+        <main class="w-full bg-white py-20 z-10 flex-grow">
+            <div class="mx-auto max-w-7xl px-6 lg:px-8">
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                    <div class="animate-new" style="animation-delay: 0.2s;">
+                        <h2 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Our Story</h2>
+                        <p class="mt-4 text-lg leading-8 text-gray-600">
+                            Founded in 2025, SwiftHire was born from a simple idea: the job search process should be easier, faster, and more human.
+                        </p>
+                        <p class="mt-4 text-gray-600">
+                            Our founders, a group of Moroccan students from Dalian Polytechnic University, saw firsthand how outdated platforms and clunky interfaces were failing both job seekers and employers. Talented candidates were lost in a "black hole" of applications, while companies struggled to find the right fit.
+                        </p>
+                        <p class="mt-4 text-gray-600">
+                            We set out to build something better. A platform that leverages smart technology to make meaningful connections, not just match keywords.
+                        </p>
+                    </div>
+
+                    <div class="animate-new" style="animation-delay: 0.3s;">
+                        <h2 class="text-3xl font-bold tracking-tight text-theme-teal sm:text-4xl">Our Mission</h2>
+                        <p class="mt-4 text-lg leading-8 text-gray-600">
+                            Our mission is to empower careers and build great teams by connecting the right talent with the right opportunity, seamlessly and efficiently.
+                        </p>
+                        <ul class="mt-6 space-y-4 text-gray-600">
+                            <li class="flex gap-x-3">
+                                <i class="fa-solid fa-check text-theme-teal mt-1 flex-shrink-0"></i>
+                                <span>
+                                    <strong class="font-semibold text-gray-900">For Job Seekers:</strong> To provide a transparent, supportive, and intuitive platform to find jobs that match your skills and ambitions.
+                                </span>
+                            </li>
+                            <li class="flex gap-x-3">
+                                <i class="fa-solid fa-check text-theme-teal mt-1 flex-shrink-0"></i>
+                                <span>
+                                    <strong class="font-semibold text-gray-900">For Employers:</strong> To deliver a powerful, streamlined hiring tool that connects you with qualified, engaged candidates ready to make an impact.
+                                </span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <section class="w-full bg-theme-teal py-20 z-10 relative overflow-hidden animate-new" style="animation-delay: 0.4s;">
+            <div class="absolute inset-0 opacity-10 text-white">
+                <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="plusPattern" patternUnits="userSpaceOnUse" width="30" height="30" patternTransform="scale(1)"><rect x="0" y="0" width="100%" height="100%" fill="none"/><path d="M 15 0 V 30 M 0 15 H 30" stroke-width="0.5" stroke="currentColor" fill="none"/></pattern></defs><rect width="100%" height="100%" fill="url(#plusPattern)"/></svg>
+            </div>
+
+            <div class="mx-auto max-w-7xl px-6 lg:px-8 relative z-10">
+                <div class="max-w-2xl mx-auto text-center">
+                    <h2 class="mt-2 text-4xl font-bold tracking-tight text-white sm:text-5xl">Our Core Values</h2>
+                    <p class="mt-4 text-lg leading-8 text-teal-100">The principles that guide us every day.</p>
+                </div>
+
+                <div class="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div class="relative text-center p-8 bg-theme-teal-600 rounded-lg shadow-lg border border-theme-teal/50 animate-new" style="animation-delay: 0.5s;">
+                        <div class="relative z-10">
+                            <div class="flex items-center justify-center h-16 w-16 bg-white/10 text-white rounded-full mx-auto">
+                                <i class="fa-solid fa-handshake text-2xl"></i>
+                            </div>
+                            <h3 class="mt-6 text-xl font-semibold text-white">Integrity</h3>
+                            <p class="mt-2 text-base text-teal-100">
+                                We operate with transparency and honesty in everything we do.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="relative text-center p-8 bg-theme-teal-600 rounded-lg shadow-lg border border-theme-teal/50 animate-new" style="animation-delay: 0.6s;">
+                        <div class="relative z-10">
+                            <div class="flex items-center justify-center h-16 w-16 bg-white/10 text-white rounded-full mx-auto">
+                                <i class="fa-solid fa-lightbulb text-2xl"></i>
+                            </div>
+                            <h3 class="mt-6 text-xl font-semibold text-white">Innovation</h3>
+                            <p class="mt-2 text-base text-teal-100">
+                                We constantly push boundaries to build a smarter hiring platform.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="relative text-center p-8 bg-theme-teal-600 rounded-lg shadow-lg border border-theme-teal/50 animate-new" style="animation-delay: 0.7s;">
+                        <div class="relative z-10">
+                            <div class="flex items-center justify-center h-16 w-16 bg-white/10 text-white rounded-full mx-auto">
+                                <i class="fa-solid fa-users text-2xl"></i>
+                            </div>
+                            <h3 class="mt-6 text-xl font-semibold text-white">Connection</h3>
+                            <p class="mt-2 text-base text-teal-100">
+                                We believe in building real relationships, not just filling quotas.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="w-full bg-gray-50 py-20 z-10 animate-new" style="animation-delay: 0.8s;">
+            <div class="mx-auto max-w-7xl px-6 lg:px-8">
+                <div class="max-w-2xl mx-auto text-center">
+                    <h2 class="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">Meet Our Team</h2>
+                    <p class="mt-4 text-lg leading-8 text-gray-600">The students behind SwiftHire, dedicated to your success.</p>
+                </div>
+
+                <div class="mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8">
+
+                    <div class="team-card bg-white rounded-lg shadow-lg p-8 text-center animate-new" style="animation-delay: 0.9s;">
+                        <img class="w-40 h-40 rounded-full object-cover mx-auto shadow-md" th:src="@{/images/1.png}" alt="Taha Amine Tagout">
+                        <h3 class="mt-6 text-xl font-semibold text-gray-900">Taha Amine Tagout</h3>
+                        <p class="mt-2 text-base text-theme-teal font-medium">Student ID: 229J75</p>
+                    </div>
+                    <div class="team-card bg-white rounded-lg shadow-lg p-8 text-center animate-new" style="animation-delay: 1.0s;">
+                        <img class="w-40 h-40 rounded-full object-cover mx-auto shadow-md" th:src="@{/images/2.png}" alt="Anass Boutakrabin">
+                        <h3 class="mt-6 text-xl font-semibold text-gray-900">Anass Boutakrabin</h3>
+                        <p class="mt-2 text-base text-theme-teal font-medium">Student ID: 223J02</p>
+                    </div>
+                    <div class="team-card bg-white rounded-lg shadow-lg p-8 text-center animate-new" style="animation-delay: 1.1s;">
+                        <img class="w-40 h-40 rounded-full object-cover mx-auto shadow-md" th:src="@{/images/3.png}" alt="Mohamed Taha Fakhri">
+                        <h3 class="mt-6 text-xl font-semibold text-gray-900">Mohamed Taha Fakhri</h3>
+                        <p class="mt-2 text-base text-theme-teal font-medium">Student ID: 229J83</p>
+                    </div>
+                    <div class="team-card bg-white rounded-lg shadow-lg p-8 text-center animate-new" style="animation-delay: 1.2s;">
+                        <img class="w-40 h-40 rounded-full object-cover mx-auto shadow-md" th:src="@{/images/4.png}" alt="Tarik Mourad">
+                        <h3 class="mt-6 text-xl font-semibold text-gray-900">Tarik Mourad</h3>
+                        <p class="mt-2 text-base text-theme-teal font-medium">Student ID: 223J01</p>
+                    </div>
+                    <div class="team-card bg-white rounded-lg shadow-lg p-8 text-center animate-new" style="animation-delay: 1.3s;">
+                        <img class="w-40 h-40 rounded-full object-cover mx-auto shadow-md" th:src="@{/images/5.png}" alt="Ahmed Bellizi">
+                        <h3 class="mt-6 text-xl font-semibold text-gray-900">Ahmed Bellizi</h3>
+                        <p class="mt-2 text-base text-theme-teal font-medium">Student ID: 229J78</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <footer class="w-full bg-gray-900 text-gray-400 py-16 z-10" style="border-top: 1px solid #374151;">
+            <div class="mx-auto max-w-7xl px-6 lg:px-8">
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
+
+                    <div>
+                        <h3 class="text-sm font-semibold uppercase text-white mb-4">About SwiftHire</h3>
+                        <p class="text-sm">
+                            Connecting talent with opportunity. We strive to make the hiring process seamless and efficient for both job seekers and employers.
+                        </p>
+                    </div>
+
+                    <div>
+                        <h3 class="text-sm font-semibold uppercase text-white mb-4">Contact Info</h3>
+                        <ul class="space-y-3 text-sm">
+                            <li>Address: No. 1 Qinggongyuan, Ganjingzi District, Dalian, Liaoning Province, China</li>
+                            <li>Phone: +86 15184002610</li>
+                            <li>Email: support@swifthire.com</li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h3 class="text-sm font-semibold uppercase text-white mb-4">Quick Links</h3>
+                        <ul class="space-y-3 text-sm">
+                            <li><a th:href="@{/}" class="hover:text-theme-teal transition-colors">Home</a></li>
+                            <li><a th:href="@{/jobs/hub}" class="hover:text-theme-teal transition-colors">Find Jobs</a></li>
+                            <li><a th:href="@{/about}" class="hover:text-theme-teal transition-colors">About Us</a></li>
+                            <li><a th:href="@{/contact}" class="hover:text-theme-teal transition-colors">Contact</a></li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h3 class="text-sm font-semibold uppercase text-white mb-4">Newsletter</h3>
+                        <p class="text-sm mb-4">Get the latest job alerts and industry news delivered to your inbox.</p>
+                        <form action="#" method="POST">
+                            <label for="footer-email" class="sr-only">Email address</label>
+                            <div class="flex rounded-md shadow-sm">
+                                <input type="email" name="footer-email" id="footer-email"
+                                       class="block w-full min-w-0 flex-1 rounded-none rounded-l-md border-gray-300 bg-white/5 py-2 px-3 text-white placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-theme-teal sm:text-sm"
+                                       placeholder="Enter your email">
+                                <button type="submit"
+                                        class="relative -ml-px inline-flex items-center gap-x-1.5 rounded-r-md px-3 py-2 text-sm font-semibold text-white bg-theme-teal hover:bg-theme-teal-600">
+                                    <i class="fa-solid fa-paper-plane"></i>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="py-8 border-t border-gray-700/50">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
+                        <div class="flex items-center justify-center md:justify-start">
+                            <a th:href="@{/}" class="-m-1.5 p-1.5 flex items-center gap-2">
+                                <img class="h-10 w-auto" th:src="@{/images/nav.png}" alt="SwiftHire">
+                                <span classm="text-white font-semibold text-lg">SwiftHire</span>
+                            </a>
+                        </div>
+                        <div>
+                            <p class="text-3xl font-bold text-white">5000+</p>
+                            <p class="text-sm text-gray-400">Active Job Postings</p>
+                        </div>
+                        <div>
+                            <p class="text-3xl font-bold text-white">451</p>
+                            <p class="text-sm text-gray-400">Companies Hiring</p>
+                        </div>
+                        <div>
+                            <p class="text-3xl font-bold text-white">568</p>
+                            <p class="text-sm text-gray-400">New Jobs This Week</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-8 mt-8 border-t border-gray-700/50 flex flex-col md:flex-row justify-between items-center text-sm">
+                    <p class="text-gray-500">&copy; 2025 SwiftHire. All rights reserved.</p>
+                    <div class="flex space-x-6 mt-4 md:mt-0">
+                        <a href="#" class="text-gray-500 hover:text-theme-teal transition-colors"><i class="fa-brands fa-facebook-f"></i></a>
+                        <a href="#" class="text-gray-500 hover:text-theme-teal transition-colors"><i class="fa-brands fa-twitter"></i></a>
+                        <a href="#" class="text-gray-500 hover:text-theme-teal transition-colors"><i class="fa-brands fa-linkedin-in"></i></a>
+                        <a href="#" class="text-gray-500 hover:text-theme-teal transition-colors"><i class="fa-brands fa-instagram"></i></a>
+                    </div>
+                </div>
+
+            </div>
+        </footer>
+
+        <a href="#" class="fixed bottom-8 right-8 bg-theme-teal hover:bg-theme-teal-600 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all z-40">
+            <i class="fa-solid fa-arrow-up"></i>
+        </a>
+
+    </div>
+</div>
+
+<script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // LOADER SCRIPT REMOVED
+    });
+</script>
+
+</body>
+</html>

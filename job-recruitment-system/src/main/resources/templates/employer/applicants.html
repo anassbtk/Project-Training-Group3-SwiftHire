@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="'Applicants for - ' + ${job.title}">Applicants</title>
+
+    <link rel="icon" type="image/png" th:href="@{/images/nav.png}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <script>
+        // Consistent Tailwind Configuration
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'sans-serif']
+                    },
+                    colors: {
+                        // Primary brand color - Teal
+                        'theme-teal': {
+                            DEFAULT: '#008080',
+                            '50': '#e6f7f7',      // Very light background tint
+                            '100': '#ccfbf1',     // Light hover/stripe
+                            '600': '#006666',     // Darker shade for buttons/accents
+                            '700': '#004d4d',     // Darkest shade for high contrast/header text
+                            '800': '#003333',     // Header background
+                        },
+                        'soft-bg': '#f3f6f9', // Richer light gray background
+                        'dark-text': '#1f2937', // Strong text color
+                    },
+                    boxShadow: {
+                        'header-premium': '0 2px 10px rgba(0, 0, 0, 0.15)',
+                        'main-card': '0 15px 40px rgba(0, 0, 0, 0.1)', // Deeper shadow for main content
+                        'sidebar-card': '0 6px 20px rgba(0, 0, 0, 0.08)',
+                    },
+                    keyframes: {
+                        'fade-in-up': {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    },
+                    animation: {
+                        'new': 'fade-in-up 0.5s ease-out forwards',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        :root {
+            --teal: #008080;
+            --main-radius: 20px;
+            --dark-header: #008080; /* Header background color */
+        }
+
+        /* --- Base & Layout --- */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--soft-bg); /* Richer background */
+            margin: 0;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        /* --- HEADER (Rich Teal Background, White Text) --- */
+        header {
+            background-color: var(--dark-header);
+            color: white;
+            padding: 18px 50px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--header-premium);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+        header h1 {
+            margin: 0;
+            font-size: 1.7em;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+        }
+        header h1 i {
+            color: white; /* Icons stay white */
+            margin-right: 12px;
+        }
+        header h1 span {
+            font-weight: 500;
+            color: #ccfbf1; /* Light tint for secondary text */
+            margin-left: 8px;
+            font-size: 0.8em;
+        }
+        header nav a {
+            color: #f0fdfa; /* Very light links */
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.2s, border-bottom 0.2s;
+            margin-left: 25px;
+            padding-bottom: 3px;
+            border-bottom: 2px solid transparent;
+        }
+        header a:hover {
+            color: white;
+            border-color: white; /* Highlight links with white underline */
+        }
+
+        /* --- Main Content Layout --- */
+        .dashboard-container {
+            max-width: 1500px;
+            margin: 30px auto;
+            padding: 0 30px 30px;
+            display: grid;
+            grid-template-columns: 1fr 3fr;
+            gap: 30px;
+        }
+
+        /* --- Left Column: Job Summary Card (Sticky) --- */
+        .summary-column {
+            position: sticky;
+            top: 90px; /* Offset from header */
+            height: fit-content;
+        }
+        .summary-card {
+            background: white;
+            padding: 25px;
+            border-radius: var(--main-radius);
+            box-shadow: var(--sidebar-card);
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s;
+        }
+        .summary-card:hover {
+            border-color: var(--teal);
+        }
+        .summary-card h3 {
+            font-size: 1.6rem;
+            font-weight: 900;
+            color: var(--dark-text);
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--theme-teal-100);
+        }
+        .summary-card .metric-box {
+            background: var(--theme-teal-50);
+            color: var(--theme-teal-700);
+            padding: 18px 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            font-weight: 600;
+            border: 1px solid var(--theme-teal-100);
+        }
+        .summary-card .metric-box strong {
+            font-size: 3rem;
+            font-weight: 900;
+            color: var(--teal);
+            margin-right: 15px;
+        }
+
+        /* --- Right Column: Main Application Table Area --- */
+        .applications-area {
+            background: white;
+            padding: 30px;
+            border-radius: var(--main-radius);
+            box-shadow: var(--main-card);
+            border: 1px solid #e2e8f0;
+            min-height: 80vh;
+        }
+        .applications-area h2 {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--dark-text);
+            margin: 0 0 20px 0;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        /* --- Table Styling (High Contrast Header, Stripe) --- */
+        .table-wrapper {
+            overflow-x: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            margin-top: 15px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border-bottom: 1px solid #f3f4f6;
+            padding: 18px 20px;
+            text-align: left;
+            font-size: 0.95em;
+            vertical-align: middle;
+        }
+        th {
+            background-color: var(--theme-teal-700); /* Dark Teal Header */
+            font-weight: 700;
+            color: white; /* White text on dark header */
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        tbody tr:nth-child(even) {
+            background-color: #fafafa; /* Subtle striping */
+        }
+        tr:hover {
+            background-color: var(--theme-teal-100); /* Strong hover accent */
+            transition: background-color 0.2s ease-out;
+        }
+
+        /* --- Form Elements (Theme Compliant) --- */
+        .status-update {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .status-select {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            background-color: white;
+            font-weight: 500;
+            transition: border-color 0.2s;
+        }
+        .status-select:focus {
+            border-color: var(--teal);
+        }
+        .btn-update {
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-weight: 700;
+            background-color: var(--teal);
+            color: white;
+            box-shadow: 0 2px 5px rgba(0, 128, 128, 0.3);
+        }
+        .btn-update:hover {
+            background-color: var(--theme-teal-600);
+            transform: translateY(-1px);
+        }
+        .action-link {
+            color: var(--teal);
+            font-weight: 600;
+        }
+        .action-link-cv {
+            color: #059669; /* Green for CV */
+        }
+
+        /* Responsive Breakpoint */
+        @media (max-width: 1200px) {
+            .dashboard-container {
+                grid-template-columns: 1fr;
+                padding: 0 20px 20px;
+                gap: 20px;
+            }
+            .summary-column {
+                position: static;
+                top: auto;
+            }
+            .applications-area {
+                padding: 20px;
+            }
+            header {
+                padding: 15px 20px;
+            }
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100;
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s;
+        }
+        .modal-overlay.show { opacity: 1; visibility: visible; }
+        .modal-content {
+            background: white; border-radius: 12px; padding: 2rem; max-width: 600px; width: 90%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3); transform: scale(0.95); transition: transform 0.3s;
+        }
+        .modal-overlay.show .modal-content { transform: scale(1); }
+        .close-btn { position: absolute; top: 10px; right: 10px; font-size: 1.5rem; color: #9ca3af; }
+    </style>
+</head>
+<body>
+
+<header class="animate-new" style="animation-delay: 0s;">
+    <h1>
+        <i class="fa-solid fa-people-group"></i>
+        Applicant Dashboard
+        <span th:text="'— ' + ${job.title}"></span>
+    </h1>
+    <nav>
+        <a th:href="@{/employer/dashboard}"><i class="fa-solid fa-gauge-high mr-1"></i> Dashboard</a>
+    </nav>
+</header>
+
+<div class="dashboard-container">
+
+    <div class="summary-column animate-new" style="animation-delay: 0.2s;">
+        <div class="summary-card">
+            <h3 th:text="${job.title}">Job Title</h3>
+
+            <p class="text-gray-600 mb-4">Review and manage candidates for this posting.</p>
+
+            <div class="metric-box">
+                <strong th:text="${applications.size()}">0</strong>
+                <span class="text-lg">Total Applicants</span>
+            </div>
+
+            <p th:if="${applications.isEmpty()}" class="text-sm text-center text-gray-500 mt-5">No candidates yet.</p>
+
+        </div>
+    </div>
+
+    <div class="applications-area animate-new" style="animation-delay: 0.3s;">
+        <h2>Application Tracker</h2>
+
+        <p th:if="${successMessage}" class="bg-green-100 text-green-700 border-green-300 message-box mb-4 p-3 rounded-lg font-medium">
+            <i class="fa-solid fa-circle-check mr-2"></i> <span th:text="${successMessage}"></span>
+        </p>
+        <p th:if="${errorMessage}" class="bg-red-100 text-red-700 border-red-300 message-box mb-4 p-3 rounded-lg font-medium">
+            <i class="fa-solid fa-circle-xmark mr-2"></i> <span th:text="${errorMessage}"></span>
+        </p>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                <tr>
+                    <th>Applicant Name / Email</th>
+                    <th>Applied Date</th>
+                    <th>Current Status</th>
+                    <th>Action Links</th>
+                    <th>Change Status</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="app : ${applications}">
+                    <td class="applicant-info">
+                        <div class="font-medium text-dark-text" th:text="${app.seeker.firstName} + ' ' + ${app.seeker.lastName}"></div>
+                        <div class="text-sm text-gray-500" th:text="${app.seeker.email}"></div>
+
+                        <div th:if="${app.examQuestions != null}" class="mt-2 text-xs">
+                            <span th:if="${!app.examSubmitted}" class="text-yellow-600 font-semibold"><i class="fa-solid fa-clock"></i> Exam Pending</span>
+                            <span th:if="${app.examSubmitted}" class="text-green-600 font-semibold"><i class="fa-solid fa-file-circle-check"></i> Exam Submitted (<span th:text="${app.examScore}">0</span>/100)</span>
+                        </div>
+                        <div th:if="${app.offerStartDate != null}" class="mt-2 text-xs text-purple-600 font-semibold">
+                            <i class="fa-solid fa-handshake"></i> Offer Sent
+                        </div>
+
+                    </td>
+                    <td class="text-gray-700 whitespace-nowrap" th:text="${#temporals.format(app.appliedAt, 'dd-MMM-yyyy HH:mm')}"></td>
+                    <td>
+                        <strong th:text="${app.status}"
+                                class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full"
+                                th:classappend="
+                                ${app.status == 'APPLIED'} ? 'bg-blue-100 text-blue-800' :
+                                (${app.status == 'REVIEWED'} ? 'bg-yellow-100 text-yellow-800' :
+                                (${app.status == 'ACCEPTED'} ? 'bg-green-100 text-green-800' :
+                                (${app.status == 'HIRED'} ? 'bg-purple-100 text-purple-800' :
+                                (${app.status == 'REJECTED'} ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'))))">
+                        </strong>
+                    </td>
+
+                    <td class="whitespace-nowrap">
+                        <a th:if="${app.seeker.seekerProfile != null and app.seeker.seekerProfile.resumeFilename != null}"
+                           th:href="@{/employer/resumes/download/{filename}(filename=${app.seeker.seekerProfile.resumeFilename})}"
+                           target="_blank" class="action-link action-link-cv block mb-1">
+                            <i class="fa-solid fa-file-arrow-down"></i> View/Download CV
+                        </a>
+                        <span th:unless="${app.seeker.seekerProfile != null and app.seeker.seekerProfile.resumeFilename != null}" style="color: #9ca3af; font-size: 0.9em; font-style: italic;" class="action-link block mb-1">
+                            <i class="fa-solid fa-circle-exclamation"></i> CV Missing
+                        </span>
+
+                        <a th:href="@{/employer/dashboard(view='messages', appId=${app.id})}" class="action-link block">
+                            <i class="fa-solid fa-message"></i> View Dialogue
+                        </a>
+
+                        <div class="mt-2 space-y-1">
+                            <button th:if="${app.status != 'REJECTED' and app.status != 'HIRED' and app.examQuestions == null}"
+                                    th:data-app-id="${app.id}" th:data-seeker-name="${app.seeker.firstName} + ' ' + ${app.seeker.lastName}"
+                                    onclick="openExamModal(this)" class="action-link text-sm text-yellow-600 hover:text-yellow-800">
+                                <i class="fa-solid fa-pencil"></i> Assign Exam
+                            </button>
+
+                            <button th:if="${app.examQuestions != null and app.examSubmitted and app.status != 'ACCEPTED' and app.status != 'HIRED'}"
+                                    th:data-app-id="${app.id}" th:data-seeker-id="${app.seeker.id}" th:data-seeker-name="${app.seeker.firstName}"
+                                    th:data-exam-answers="${app.examAnswers}"
+                                    onclick="openScoreModal(this)" class="action-link text-sm text-blue-600 hover:text-blue-800">
+                                <i class="fa-solid fa-clipboard-check"></i> Score Exam
+                            </button>
+
+                            <button th:if="${app.status == 'ACCEPTED' and app.offerStartDate == null}"
+                                    th:data-app-id="${app.id}" th:data-seeker-name="${app.seeker.firstName}"
+                                    onclick="openOfferModal(this)" class="btn-update text-sm bg-theme-teal text-white hover:bg-theme-teal-600">
+                                <i class="fa-solid fa-handshake-simple"></i> Send Offer
+                            </button>
+                        </div>
+                    </td>
+
+                    <td class="whitespace-nowrap">
+                        <form th:action="@{/employer/applications/{id}/status(id=${app.id})}" method="post" class="status-update">
+                            <select name="newStatus" required class="status-select">
+                                <option th:each="status : ${applicationStatuses}"
+                                        th:value="${status}"
+                                        th:text="${status}"
+                                        th:selected="${status == app.status}">
+                                </option>
+                            </select>
+                            <button type="submit" class="btn-update"><i class="fa-solid fa-check"></i> Update</button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <p th:if="${applications.isEmpty()}" class="text-center text-gray-500 mt-10 italic">
+            <i class="fa-solid fa-magnifying-glass-chart mr-2"></i> No applicants yet for this job.
+        </p>
+    </div>
+</div>
+
+<div id="exam-modal-overlay" class="modal-overlay">
+    <div class="modal-content relative">
+        <button onclick="closeModal('exam-modal-overlay')" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
+        <h3 class="text-2xl font-bold mb-4 text-gray-800">Assign Application Exam</h3>
+        <p class="text-gray-600 mb-4">Set questions for <span id="exam-modal-name" class="font-semibold text-theme-teal"></span>. The seeker must submit answers before proceeding to the next stage.</p>
+
+        <form th:action="@{/employer/applications/0/exam/set}" method="post" id="exam-form">
+            <input type="hidden" name="appId" id="exam-form-app-id">
+
+            <div class="mb-4">
+                <label for="questions" class="block font-medium text-gray-700">Exam Questions (Markdown Supported)</label>
+                <textarea id="questions" name="questions" rows="6" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm border p-2" required>
+1. What is the biggest challenge facing our industry today? (Max 200 words)
+2. Describe a time you failed and what you learned from it.
+3. [Technical Question specific to the Job]</textarea>
+            </div>
+
+            <div class="mb-6">
+                <label for="examAnswers" class="block font-medium text-gray-700">Template for Answers (For Seeker UI)</label>
+                <textarea id="examAnswers" name="examAnswers" rows="4" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm border p-2" placeholder="Provide empty JSON structure for the seeker to fill out (e.g., {'q1': '', 'q2': ''})">
+[
+  {"questionId": "q1", "questionText": "Question 1 text...", "answer": ""},
+  {"questionId": "q2", "questionText": "Question 2 text...", "answer": ""},
+  {"questionId": "q3", "questionText": "Question 3 text...", "answer": ""}
+]</textarea>
+                <p class="text-xs text-gray-500 mt-1">This is displayed as the initial answer field structure to the seeker.</p>
+            </div>
+
+            <button type="submit" class="btn-update w-full py-3">Send Exam</button>
+        </form>
+    </div>
+</div>
+
+<div id="score-modal-overlay" class="modal-overlay">
+    <div class="modal-content relative">
+        <button onclick="closeModal('score-modal-overlay')" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
+        <h3 class="text-2xl font-bold mb-4 text-gray-800">Score Exam: <span id="score-modal-name" class="font-semibold text-theme-teal"></span></h3>
+        <p class="text-gray-600 mb-4">Review the submitted answers below and assign a final score (0-100).</p>
+
+        <div id="seeker-answers" class="bg-gray-100 p-4 rounded-md mb-4 max-h-60 overflow-y-auto">
+            <p class="text-sm text-gray-500 italic">Answers loading...</p>
+        </div>
+
+        <form th:action="@{/employer/candidate/0/score}" method="post" id="score-form">
+            <input type="hidden" name="applicationId" id="score-form-app-id">
+            <input type="hidden" name="userId" id="score-form-seeker-id">
+
+            <div class="mb-4">
+                <label for="examScore" class="block font-medium text-gray-700">Final Score (0-100)</label>
+                <input type="number" id="examScore" name="examScore" min="0" max="100" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm border p-2 text-xl" required>
+            </div>
+
+            <button type="submit" class="btn-update w-full py-3">Set Score & Finalize</button>
+        </form>
+    </div>
+</div>
+
+<div id="offer-modal-overlay" class="modal-overlay">
+    <div class="modal-content relative">
+        <button onclick="closeModal('offer-modal-overlay')" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
+        <h3 class="text-2xl font-bold mb-4 text-gray-800">Send Final Job Offer</h3>
+        <p class="text-gray-600 mb-4">You are sending a final offer to <span id="offer-modal-name" class="font-semibold text-theme-teal"></span>. This will set the status to HIRED.</p>
+
+        <form th:action="@{/employer/applications/0/offer/set}" method="post" id="offer-form">
+            <input type="hidden" name="appId" id="offer-form-app-id">
+
+            <div class="grid grid-cols-2 gap-4">
+                <div class="mb-4">
+                    <label for="offerStartDate" class="block font-medium text-gray-700">Start Date</label>
+                    <input type="date" id="offerStartDate" name="offerStartDate" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm border p-2" required>
+                </div>
+                <div class="mb-4">
+                    <label for="offerStartTime" class="block font-medium text-gray-700">Start Time</label>
+                    <input type="time" id="offerStartTime" name="offerStartTime" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm border p-2" required value="09:00">
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label for="offerLocation" class="block font-medium text-gray-700">Location / First Day Details</label>
+                <input type="text" id="offerLocation" name="offerLocation" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm border p-2" placeholder="e.g., Office 4B, Tokyo HQ" required>
+            </div>
+
+            <div class="mb-6">
+                <label for="offerRequiredPapers" class="block font-medium text-gray-700">Required Documents/Notes (Markdown)</label>
+                <textarea id="offerRequiredPapers" name="offerRequiredPapers" rows="4" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm border p-2" required>
+* Signed Contract (Sent via email)
+* Passport/ID Card for verification
+* Tax forms (to be filled out on site)</textarea>
+                <p class="text-xs text-gray-500 mt-1">This is displayed as the initial answer field structure to the seeker.</p>
+            </div>
+
+            <button type="submit" class="btn-update w-full py-3">Confirm & Send Offer</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    // --- MODAL & DATA FUNCTIONS ---
+    function openModal(id) {
+        document.getElementById(id).classList.add('show');
+    }
+    function closeModal(id) {
+        document.getElementById(id).classList.remove('show');
+    }
+
+    // --- 1. EXAM MODAL ---
+    function openExamModal(button) {
+        const appId = button.getAttribute('data-app-id');
+        const seekerName = button.getAttribute('data-seeker-name');
+
+        document.getElementById('exam-modal-name').textContent = seekerName;
+        document.getElementById('exam-form-app-id').value = appId;
+
+        // Update form action dynamically
+        const form = document.getElementById('exam-form');
+        form.action = `/employer/applications/${appId}/exam/set`;
+
+        openModal('exam-modal-overlay');
+    }
+
+    // --- 2. SCORE MODAL ---
+    function openScoreModal(button) {
+        const appId = button.getAttribute('data-app-id');
+        const seekerId = button.getAttribute('data-seeker-id');
+        const seekerName = button.getAttribute('data-seeker-name');
+        const examAnswersJson = button.getAttribute('data-exam-answers');
+
+        document.getElementById('score-modal-name').textContent = seekerName;
+        document.getElementById('score-form-app-id').value = appId;
+        document.getElementById('score-form-seeker-id').value = seekerId;
+
+        // Update form action dynamically
+        const form = document.getElementById('score-form');
+        form.action = `/employer/candidate/${seekerId}/score`;
+
+        // Render Answers
+        renderAnswers(examAnswersJson);
+
+        openModal('score-modal-overlay');
+    }
+
+    function renderAnswers(answersJson) {
+        const container = document.getElementById('seeker-answers');
+        container.innerHTML = '';
+
+        try {
+            const answers = JSON.parse(answersJson);
+            if (answers.length === 0) {
+                container.innerHTML = '<p class="text-sm text-gray-500 italic">No formatted answers found.</p>';
+                return;
+            }
+
+            answers.forEach((item, index) => {
+                const answerDiv = document.createElement('div');
+                answerDiv.className = 'border-b border-gray-200 pb-2 mb-2 last:border-b-0';
+                answerDiv.innerHTML = `
+                    <p class="font-semibold text-gray-800 text-sm">Q${index + 1}: ${item.questionText || 'Question text not provided'}</p>
+                    <p class="text-gray-700 whitespace-pre-wrap text-sm italic mt-1">${item.answer || 'No answer submitted.'}</p>
+                `;
+                container.appendChild(answerDiv);
+            });
+
+        } catch (e) {
+            container.innerHTML = `<p class="text-sm text-red-500 italic">Error parsing submitted answers: ${e.message}</p>`;
+        }
+    }
+
+    // --- 3. OFFER MODAL ---
+    function openOfferModal(button) {
+        const appId = button.getAttribute('data-app-id');
+        const seekerName = button.getAttribute('data-seeker-name');
+
+        document.getElementById('offer-modal-name').textContent = seekerName;
+        document.getElementById('offer-form-app-id').value = appId;
+
+        // Update form action dynamically
+        const form = document.getElementById('offer-form');
+        form.action = `/employer/applications/${appId}/offer/set`;
+
+        // Set today's date as default
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('offerStartDate').value = today;
+
+        openModal('offer-modal-overlay');
+    }
+</script>
+
+</body>
+</html>

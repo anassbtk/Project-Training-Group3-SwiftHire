@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>View Candidate Profile | SwiftHire</title>
+    <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}" />
+    <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : ''}" />
+    <link rel="icon" type="image/png" th:href="@{/images/nav.png}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        teal: {
+                            50: '#f0fdfa', 100: '#ccfbf1', 500: '#008080',
+                            600: '#007a7a', 700: '#006666', 800: '#005050',
+                            900: '#003c3c'
+                        },
+                        neutral: {
+                            50: '#fcfcfd', 100: '#f5f7fa', 200: '#e2e8f0',
+                            700: '#4a5568', 800: '#2d3748'
+                        },
+                        brand: {
+                            light: '#00e6e6', DEFAULT: '#00cccc', dark: '#00a0a0'
+                        },
+                        'gold': { DEFAULT: '#F59E0B', dark: '#B45309' }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            --sidebar-width: 16rem;
+            --card-width: 700px;
+            --teal-primary: #007a7a;
+            --accent-color: #00cccc;
+            --shadow-light: rgba(0, 0, 0, 0.04);
+            --shadow-medium: rgba(0, 0, 0, 0.08);
+            --shadow-heavy: rgba(0, 0, 0, 0.12);
+            --bg-page: #f7f9fc;
+        }
+
+        body {
+            background: radial-gradient(1200px 400px at 10% 10%, rgba(0,179,179,0.01), transparent 8%),
+            radial-gradient(900px 300px at 90% 85%, rgba(0,122,122,0.01), transparent 6%),
+            linear-gradient(180deg, var(--bg-page) 0%, #eef3f7 100%);
+            font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+            margin: 0;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+        }
+
+        .sidebar {
+            background: var(--teal-primary);
+            width: var(--sidebar-width);
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            overflow-y: auto;
+            z-index: 20;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+
+        .main-content-wrapper {
+            flex-grow: 1;
+            height: 100vh;
+            margin-left: var(--sidebar-width);
+            padding: 2.5rem 3rem;
+            overflow-y: auto;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .page-header {
+            position: absolute;
+            top: 2rem;
+            left: 3rem;
+            margin-bottom: 2rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid rgba(0,128,128,0.1);
+            z-index: 10;
+            width: calc(100% - 6rem);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* --- STUNNING GLASS CARD DESIGN --- */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow:
+                    0 4px 15px var(--shadow-light),
+                    0 15px 40px var(--shadow-medium),
+                    0 40px 90px var(--shadow-heavy),
+                    inset 0 0 0 1px rgba(255,255,255,0.6);
+            border-radius: 28px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s ease;
+        }
+
+        .profile-pic { width:110px; height:110px; border-radius: 50%; object-fit: cover;
+            border: 5px solid white;
+            box-shadow: 0 6px 20px rgba(0,128,128,0.25);
+            background:linear-gradient(135deg, var(--teal-primary), var(--accent-color));
+        }
+        .profile-summary { display: flex; align-items: center; margin-bottom: 1.8rem; padding-top: 1.5rem; }
+
+        .brand-heading {
+            background: linear-gradient(90deg, var(--accent-color), var(--teal-primary), #004d4d);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            background-size: 200% 100%;
+            animation: slideGradient 8s linear infinite;
+            font-size: 2.8rem;
+            letter-spacing: -0.03em;
+            line-height: 1.1;
+        }
+        @keyframes slideGradient { 0% { background-position: 0% } 50% { background-position: 100% } 100% { background-position: 0% } }
+
+        .detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+        .detail-item {
+            background: rgba(255,255,255,0.6);
+            border: 1px solid rgba(0,128,128,0.05);
+            border-radius: 12px;
+            padding: 16px;
+            transition: box-shadow 0.2s ease, transform 0.2s ease;
+        }
+        .detail-item:hover {
+            box-shadow: 0 6px 15px rgba(0,128,128,0.1);
+            transform: translateY(-2px);
+        }
+
+        .detail-item label { display: block; font-size: 0.7rem; font-weight: 700; color: var(--teal-primary); margin-bottom: 5px; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.8; }
+        .detail-item p { margin: 0; font-size: 1.05rem; color: var(--neutral-800); font-weight: 600; line-height: 1.4; }
+
+        .list-item { padding: 1.5rem 0; border-bottom: 1px solid var(--neutral-200); }
+        .list-item:last-child { border-bottom: none; }
+
+        .card-header { padding: 1.8rem 1.8rem 0.8rem 1.8rem; border-bottom: none; display:flex; align-items:center; justify-content:space-between; }
+        .card-body { padding: 0.8rem 1.8rem 1.8rem 1.8rem; }
+
+        /* --- FIXED CARD WRAPPER: Perfectly Centered --- */
+        .fixed-card-wrapper {
+            width: var(--card-width);
+            height: 800px; /* INCREASED HEIGHT */
+            z-index: 15;
+            margin: auto;
+            flex-shrink: 0;
+        }
+
+        /* --- DRAG-TO-FLIP CARD STYLES --- */
+        .flip-card {
+            background-color: transparent;
+            width: 100%;
+            height: 100%;
+            perspective: 1800px;
+            cursor: grab;
+        }
+
+        .flip-card.is-dragging {
+            cursor: grabbing;
+            transform: translateY(-12px) scale(1.02) rotateZ(-0.5deg);
+            box-shadow:
+                    0 15px 50px var(--shadow-medium),
+                    0 60px 120px var(--shadow-heavy);
+        }
+
+        .flip-card-inner {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            transition: transform 1.1s cubic-bezier(0.25, 1, 0.5, 1.25);
+            transform-style: preserve-3d;
+        }
+
+        .flip-card-inner.no-transition { transition: none !important; }
+        .flip-card.is-flipped .flip-card-inner { transform: rotateY(180deg); }
+        .flip-card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            /* Removed overflow-y: auto; here to rely on increased height */
+        }
+        .card-back { transform: rotateY(180deg); }
+        .flip-card-face.glass-card { padding: 0; }
+
+        .section-content { margin-top: 3rem; padding-top: 2.5rem; border-top: 1px solid rgba(0,128,128,0.1); }
+
+        .flip-action-hint {
+            color: var(--teal-primary);
+            font-size: 0.95rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            opacity: 0.9;
+            display: flex;
+            align-items: center;
+        }
+
+        .back-to-list-link {
+            position: absolute;
+            bottom: 2rem;
+            right: 3rem;
+            z-index: 10;
+            color: var(--neutral-700);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            transition: color 0.2s ease;
+        }
+        .back-to-list-link:hover {
+            color: var(--brand-dark);
+        }
+
+        /* --- AI MODAL STYLES --- */
+        .ai-modal-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+            z-index: 100;
+            display: none;
+            align-items: center; justify-content: center;
+        }
+        .ai-modal {
+            background: #fff; width: 90%; max-width: 600px;
+            border-radius: 20px; padding: 25px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+            transform: scale(0.95); opacity: 0;
+            transition: all 0.3s ease;
+            border: 2px solid #F59E0B;
+        }
+        .ai-modal.show { transform: scale(1); opacity: 1; }
+
+        .bg-gold-gradient { background: linear-gradient(135deg, #F59E0B 0%, #B45309 100%); color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+
+    </style>
+</head>
+<body>
+
+<div class="flex h-screen w-screen overflow-hidden">
+    <div th:replace="~{/employer/dashboard :: sidebar('candidates')}"></div>
+
+    <main class="main-content-wrapper">
+
+        <header class="page-header flex items-start justify-between gap-6">
+            <div>
+                <h1 class="font-extrabold brand-heading">Candidate Profile</h1>
+            </div>
+            <div class="flex items-center gap-4">
+
+                <div th:if="${isPremium}">
+                    <button onclick="openAiModal()" class="bg-gold-gradient px-5 py-2 rounded-full font-bold shadow-md hover:shadow-lg hover:scale-105 transition-transform flex items-center gap-2 text-white border-none cursor-pointer">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> AI Analyze
+                    </button>
+                </div>
+                <div th:unless="${isPremium}">
+                    <button disabled class="bg-gray-200 text-gray-500 px-5 py-2 rounded-full font-bold cursor-not-allowed flex items-center gap-2 border-none">
+                        <i class="fa-solid fa-lock"></i> AI Analyze
+                    </button>
+                </div>
+
+                <div class="text-base text-neutral-700 font-bold text-teal-700 flex items-center">
+                    <i class="fa-solid fa-hand-pointer mr-2 text-xl"></i> Swipe to flip
+                </div>
+            </div>
+        </header>
+
+        <div class="fixed-card-wrapper">
+            <div class="flip-card" id="profileCard">
+                <div class="flip-card-inner">
+
+                    <div class="flip-card-face card-front glass-card">
+
+                        <div class="card-header">
+                            <h2 class="text-2xl font-bold text-neutral-700">Candidate Summary</h2>
+                            <span class="flip-action-hint">Swipe left <i class="fa-solid fa-arrow-left ml-2"></i></span>
+                        </div>
+
+                        <div class="card-body">
+                            <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+                            <div class="profile-summary">
+                                <img th:if="${user.profilePictureFilename != null}" th:src="@{/seeker/profile/pic/{userId}(userId=${user.id})}" alt="Profile" class="profile-pic">
+                                <div th:unless="${user.profilePictureFilename != null}" class="profile-pic" style="display: flex; align-items: center; justify-content: center; font-size: 3rem; color: white;">
+                                    <span th:text="${#strings.substring(user.firstName, 0, 1)}" class="font-bold"></span>
+                                </div>
+                                <div class="profile-info ml-5">
+                                    <h1 class="text-3xl font-extrabold text-neutral-800" th:text="${user.firstName} + ' ' + ${user.lastName}">Candidate Name</h1>
+                                    <p class="text-brand-dark mt-1 font-semibold text-xl" th:text="${profile.currentTitle}">Senior Software Engineer</p>
+                                </div>
+                            </div>
+
+                            <div class="detail-grid mt-6">
+                                <div class="detail-item"><label>Email</label><p th:text="${user.email}">candidate.email@example.com</p></div>
+                                <div class="detail-item"><label>Phone</label><p th:text="${user.phoneNumber}">+1 234 567 890</p></div>
+                                <div class="detail-item"><label>Location</label><p th:text="${profile.city}">New York</p></div>
+                                <div class="detail-item"><label>Years of Experience</label><p th:text="${profile.yearsExperience} + ' years'">5 years</p></div>
+                                <div class="detail-item"><label>Expected Salary</label><p th:text="${profile.expectedSalary != null ? '$' + #numbers.formatDecimal(profile.expectedSalary, 1, 'COMMA', 2, 'POINT') : 'Not Specified'}">$95,000.00</p></div>
+                                <div class="detail-item">
+                                    <label>Resume</label>
+                                    <p>
+                                        <a th:if="${profile.resumeFilename != null}"
+                                           th:href="@{/employer/resumes/download/{filename}(filename=${profile.resumeFilename})}"
+                                           target="_blank" class="text-brand-dark hover:text-teal-800 font-semibold flex items-center">
+                                            <i class="fa-solid fa-file-arrow-down mr-2"></i>Download PDF
+                                        </a>
+                                        <span th:unless="${profile.resumeFilename != null}" class="text-neutral-700">No resume uploaded.</span>
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="detail-item mt-6">
+                                <label>Profile Headline</label>
+                                <p th:text="${profile.profileHeadline}">Full-stack developer specializing in Spring Boot and React.</p>
+                            </div>
+                            <div class="detail-item mt-6">
+                                <label>Skills</label>
+                                <p th:text="${profile.skills}">Java, Spring Boot, SQL, React, AWS</p>
+                            </div>
+
+                            <div id="profileDataHidden" class="hidden"
+                                 th:text="'Title: ' + ${profile.currentTitle} + '. Headline: ' + ${profile.profileHeadline} + '. Skills: ' + ${profile.skills} + '. Exp: ' + ${profile.yearsExperience} + ' years.'"></div>
+
+                        </div>
+                    </div>
+
+                    <div class="flip-card-face card-back glass-card">
+
+                        <div class="card-header">
+                            <h2 class="text-2xl font-bold text-neutral-700">Experience & Education</h2>
+                            <span class="flip-action-hint">Swipe right <i class="fa-solid fa-arrow-right ml-2"></i></span>
+                        </div>
+
+                        <div class="card-body">
+                            <div class="section-content">
+                                <h3 class="text-xl font-bold mb-4 text-brand-dark flex items-center"><i class="fa-solid fa-briefcase mr-2"></i> Work Experience</h3>
+                                <div th:if="${!workExperiences.isEmpty()}">
+                                    <div th:each="exp : ${workExperiences}" class="list-item">
+                                        <div class="item-details">
+                                            <h4 class="font-bold text-lg" th:text="${exp.jobTitle}">Senior Developer</h4>
+                                            <p class="text-sm text-neutral-700 mt-1 font-medium">
+                                                <span th:text="${exp.companyName}"></span> |
+                                                <span th:text="${exp.startDate}"></span> -
+                                                <span th:text="${exp.endDate}"></span>
+                                            </p>
+                                            <p th:text="${exp.description}" class="text-sm mt-2 text-neutral-700" style="white-space: pre-wrap;"></p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p th:if="${workExperiences.isEmpty()}" class="text-neutral-700">No work experience listed.</p>
+                            </div>
+
+                            <div class="section-content">
+                                <h3 class="text-xl font-bold mb-4 text-brand-dark flex items-center"><i class="fa-solid fa-graduation-cap mr-2"></i> Education</h3>
+                                <div th:if="${!educationHistory.isEmpty()}">
+                                    <div th:each="edu : ${educationHistory}" class="list-item">
+                                        <div class="item-details">
+                                            <h4 class="font-bold text-lg" th:text="${edu.degree}">Bachelor of Science</h4>
+                                            <p class="text-sm text-neutral-700 mt-1 font-medium">
+                                                <span th:text="${edu.institutionName}"></span> |
+                                                <span th:text="${edu.startYear}"></span> -
+                                                <span th:text="${edu.endYear}"></span>
+                                            </p>
+                                            <p th:text="${edu.fieldOfStudy}" class="text-sm mt-2 text-neutral-700"></p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p th:if="${educationHistory.isEmpty()}" class="text-neutral-700">No education history listed.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <a th:href="@{/employer/dashboard(view='candidates')}" class="back-to-list-link">
+            <i class="fa-solid fa-arrow-left-long mr-2"></i> Back to Candidates List
+        </a>
+
+    </main>
+</div>
+
+<div id="aiModal" class="ai-modal-overlay">
+    <div class="ai-modal">
+        <div class="flex justify-between items-center border-b pb-3 mb-4">
+            <h3 class="text-xl font-bold text-gray-800"><i class="fa-solid fa-robot text-amber-500 mr-2"></i> AI Candidate Analysis</h3>
+            <button onclick="closeAiModal()" class="text-gray-500 hover:text-red-500 text-xl"><i class="fa-solid fa-times"></i></button>
+        </div>
+        <div id="aiModalContent" class="space-y-4">
+            <div id="aiLoading" class="text-center py-10">
+                <i class="fa-solid fa-circle-notch fa-spin text-4xl text-amber-500 mb-3"></i>
+                <p class="text-gray-600">Analyzing candidate profile...</p>
+            </div>
+            <div id="aiResults" class="hidden">
+                <div class="bg-amber-50 p-4 rounded-lg border border-amber-200">
+                    <h4 class="font-bold text-amber-800 mb-1">Executive Summary</h4>
+                    <p id="aiSummary" class="text-gray-800 text-sm"></p>
+                </div>
+                <div>
+                    <h4 class="font-bold text-teal-700 mb-1"><i class="fa-solid fa-thumbs-up"></i> Top Strengths</h4>
+                    <ul id="aiStrengths" class="list-disc list-inside text-sm text-gray-700"></ul>
+                </div>
+                <div>
+                    <h4 class="font-bold text-blue-700 mb-1"><i class="fa-solid fa-question-circle"></i> Suggested Questions</h4>
+                    <ul id="aiQuestions" class="list-disc list-inside text-sm text-gray-700"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    // --- AI LOGIC ---
+    const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+
+    function openAiModal() {
+        const modal = document.getElementById('aiModal');
+        const modalBox = modal.querySelector('.ai-modal');
+        const loading = document.getElementById('aiLoading');
+        const results = document.getElementById('aiResults');
+        const profileText = document.getElementById('profileDataHidden').textContent;
+
+        modal.style.display = 'flex';
+        setTimeout(() => { modal.style.opacity = '1'; modalBox.classList.add('show'); }, 10);
+
+        loading.classList.remove('hidden');
+        results.classList.add('hidden');
+
+        fetch('/employer/api/ai/analyze-candidate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', [csrfHeader]: csrfToken },
+            body: JSON.stringify({ profileText: profileText })
+        })
+            .then(res => res.json())
+            .then(data => {
+                loading.classList.add('hidden');
+                results.classList.remove('hidden');
+                document.getElementById('aiSummary').textContent = data.summary || "No summary.";
+
+                const sList = document.getElementById('aiStrengths'); sList.innerHTML = '';
+                (data.strengths||[]).forEach(s => { let li = document.createElement('li'); li.textContent = s; sList.appendChild(li); });
+
+                const qList = document.getElementById('aiQuestions'); qList.innerHTML = '';
+                (data.questions||[]).forEach(q => { let li = document.createElement('li'); li.textContent = q; qList.appendChild(li); });
+            })
+            .catch(err => {
+                loading.innerHTML = '<p class="text-red-500">Analysis failed.</p>';
+            });
+    }
+
+    function closeAiModal() {
+        const modal = document.getElementById('aiModal');
+        const modalBox = modal.querySelector('.ai-modal');
+        modal.style.opacity = '0';
+        modalBox.classList.remove('show');
+        setTimeout(() => { modal.style.display = 'none'; }, 300);
+    }
+
+    // --- CARD DRAG LOGIC (Restored from Original) ---
+    document.addEventListener('DOMContentLoaded', function () {
+        const card = document.getElementById('profileCard');
+        const flipInner = card.querySelector('.flip-card-inner');
+
+        let isDragging = false;
+        let startX = 0;
+        let startY = 0;
+        let isFlipped = false;
+        const dragThreshold = 100;
+
+        function onMouseDown(e) {
+            if (e.type === 'mousedown' && e.button !== 0) return;
+            if (e.target.closest('a') || e.target.closest('button') || e.target.closest('input')) return;
+
+            isDragging = true;
+            startX = e.type.includes('touch') ? e.touches[0].pageX : e.pageX;
+            startY = e.type.includes('touch') ? e.touches[0].pageY : e.pageY;
+
+            card.classList.add('is-dragging');
+            flipInner.classList.add('no-transition');
+        }
+
+        function onMouseMove(e) {
+            if (!isDragging) return;
+            const currentX = e.type.includes('touch') ? e.touches[0].pageX : e.pageX;
+            const diffX = currentX - startX;
+            const diffY = (e.type.includes('touch') ? e.touches[0].pageY : e.pageY) - startY;
+
+            if (Math.abs(diffY) > Math.abs(diffX) && Math.abs(diffY) > 10) {
+                onMouseUp(e);
+                return;
+            }
+            if (e.type.includes('touch') && Math.abs(diffX) > 10) e.preventDefault();
+        }
+
+        function onMouseUp(e) {
+            if (!isDragging) return;
+            const endX = e.type.includes('touch') ? e.changedTouches[0].pageX : e.pageX;
+            const diffX = endX - startX;
+
+            isDragging = false;
+            card.classList.remove('is-dragging');
+            flipInner.classList.remove('no-transition');
+
+            if (Math.abs(diffX) > dragThreshold) {
+                card.classList.toggle('is-flipped');
+                isFlipped = !isFlipped;
+            }
+        }
+
+        card.addEventListener('mousedown', onMouseDown);
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', onMouseUp);
+        card.addEventListener('touchstart', onMouseDown);
+        window.addEventListener('touchmove', onMouseMove, { passive: false });
+        window.addEventListener('touchend', onMouseUp);
+    });
+    /*]]>*/
+</script>
+<script src="/js/employer-dashboard.js"></script>
+
+</body>
+</html>

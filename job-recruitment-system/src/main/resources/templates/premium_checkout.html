@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Mock Checkout - Confirm Payment</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f4f6f8; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+        .checkout-box { background-color: white; border-radius: 12px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); padding: 40px; width: 500px; }
+        .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #e2e8f0; }
+        .detail-row:last-of-type { border-bottom: none; }
+        .btn-confirm { background-color: #008080; color: white; padding: 12px 20px; border-radius: 8px; font-weight: 600; transition: background-color 0.2s; border: none; }
+        .btn-confirm:hover { background-color: #006666; }
+        .payment-option { border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; cursor: pointer; transition: border-color 0.2s; }
+        .payment-option:has(input:checked) { border-color: #008080; background-color: #f0fdfa; }
+        .card-details-form { border-top: 1px dashed #e2e8f0; padding-top: 20px; margin-top: 20px; }
+        /* Style for inputs that have an inner icon */
+        .input-group-with-icon { position: relative; }
+        .card-icon-display { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: #bbb; pointer-events: none; }
+    </style>
+</head>
+<body>
+
+<div class="checkout-box">
+    <div class="mb-8 text-center">
+        <h1 class="text-3xl font-extrabold text-gray-900 mb-2">Secure Checkout</h1>
+        <p class="text-gray-500">Review your order and select your payment method.</p>
+    </div>
+
+    <div class="space-y-4 mb-8">
+        <div class="detail-row">
+            <span class="font-medium text-gray-700">Plan:</span>
+            <span class="font-bold text-lg" th:text="${tier}">PREMIUM</span>
+        </div>
+        <div class="detail-row">
+            <span class="font-medium text-gray-700">Description:</span>
+            <span th:text="${description}">SwiftHire Premium Subscription</span>
+        </div>
+        <div class="detail-row" style="border: none;">
+            <span class="text-xl font-bold text-gray-900">Total Due:</span>
+            <span class="text-2xl font-extrabold text-green-600" th:text="'$' + ${#numbers.formatDecimal(amount, 0, 'COMMA', 2, 'POINT')}">$9.99</span>
+        </div>
+    </div>
+
+    <form th:action="@{/premium/complete}" method="get" class="space-y-4" id="checkout-form">
+
+        <input type="hidden" name="paymentId" th:value="${paymentId}" id="paymentId" />
+        <input type="hidden" name="tier" th:value="${tier}" id="tier" />
+
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Select Payment Method</h2>
+
+        <div class="space-y-3">
+            <label class="payment-option flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <input type="radio" name="method" value="card" checked required class="text-008080">
+                    <i class="fa-solid fa-credit-card text-gray-500"></i>
+                    <span class="font-medium">Credit/Debit Card</span>
+                </div>
+                <i class="fa-brands fa-cc-visa text-xl text-blue-800"></i>
+            </label>
+
+            <label class="payment-option flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <input type="radio" name="method" value="paypal" required class="text-008080">
+                    <i class="fa-brands fa-paypal text-gray-500"></i>
+                    <span class="font-medium">PayPal (Redirects for Login/Payment)</span>
+                </div>
+                <i class="fa-brands fa-paypal text-xl text-blue-900"></i>
+            </label>
+        </div>
+
+        <div id="card-details" class="card-details-form space-y-3">
+
+            <div class="input-group-with-icon">
+                <input type="text" id="card-number" placeholder="Card Number" class="w-full p-2 border rounded" required maxlength="24">
+                <span class="card-icon-display" id="card-icon"><i class="fa-regular fa-credit-card"></i></span>
+            </div>
+
+            <div class="flex space-x-3">
+                <input type="text" id="expiry-date" placeholder="MM/YY" class="w-1/2 p-2 border rounded" required maxlength="5">
+                <input type="text" id="cvc" placeholder="CVC" class="w-1/2 p-2 border rounded" required maxlength="3">
+            </div>
+
+            <input type="text" placeholder="Name on Card" class="w-full p-2 border rounded" required>
+        </div>
+
+        <p class="text-xs text-gray-500 pt-3" id="mock-message">Note: This is a **mock payment page**. Your card will not be charged. Upon completion, your account will be upgraded.</p>
+
+        <button type="submit" class="btn-confirm w-full" id="confirm-button">
+            <i class="fa-solid fa-check-circle mr-2"></i> Process & Complete Upgrade
+        </button>
+    </form>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const cardDetails = document.getElementById('card-details');
+        const paymentOptions = document.querySelectorAll('input[name="method"]');
+        const form = document.getElementById('checkout-form');
+        const confirmButton = document.getElementById('confirm-button');
+        const mockMessage = document.getElementById('mock-message');
+
+        const tier = document.getElementById('tier').value;
+        const paymentId = document.getElementById('paymentId').value;
+
+        // Card Inputs
+        const cardNumberInput = document.getElementById('card-number');
+        const expiryDateInput = document.getElementById('expiry-date');
+        const cvcInput = document.getElementById('cvc');
+        const cardIcon = document.getElementById('card-icon');
+
+
+        // === 1. Input Masking and Validation ===
+
+        // Function to detect card type and update icon
+        function detectCardType(number) {
+            if (number.startsWith('4')) {
+                return { type: 'visa', iconClass: 'fa-brands fa-cc-visa text-blue-700' };
+            }
+            if (number.startsWith('5')) {
+                return { type: 'mastercard', iconClass: 'fa-brands fa-cc-mastercard text-red-700' };
+            }
+            return { type: 'default', iconClass: 'fa-regular fa-credit-card' };
+        }
+
+        // Card Number Mask (Stops at 24 characters, including spaces for visual grouping)
+        cardNumberInput.addEventListener('input', (e) => {
+            let value = e.target.value.replace(/\D/g, '');
+            // Limit to 16 digits (visual max 19 with spaces)
+            value = value.substring(0, 16);
+
+            // Insert spaces every 4 digits for visual grouping (4-4-4-4)
+            const formattedValue = value.replace(/(\d{4})(?=\d)/g, '$1 ');
+            e.target.value = formattedValue;
+
+            // Dynamic icon update
+            const cardInfo = detectCardType(value);
+            cardIcon.className = 'card-icon-display ' + cardInfo.iconClass;
+
+            // Set visual max length for the input field itself
+            e.target.maxLength = 19;
+        });
+
+        // Expiry Date Mask (MM/YY)
+        expiryDateInput.addEventListener('input', (e) => {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 2) {
+                value = value.substring(0, 2) + '/' + value.substring(2);
+            }
+            // Limit to 5 characters (MM/YY)
+            e.target.value = value.substring(0, 5);
+        });
+
+        // CVC Limit (Max 3) is handled by the maxlength="3" attribute on the input field.
+
+
+        // === 2. Payment Method Switching Logic ===
+
+        function toggleCardForm() {
+            const selectedMethod = document.querySelector('input[name="method"]:checked').value;
+            const cardInputs = cardDetails.querySelectorAll('input');
+
+            if (selectedMethod === 'card') {
+                cardDetails.style.display = 'block';
+                // Make card fields required
+                cardInputs.forEach(input => input.required = true);
+
+                confirmButton.disabled = false;
+                confirmButton.innerHTML = '<i class="fa-solid fa-check-circle mr-2"></i> Process & Complete Upgrade';
+                mockMessage.innerHTML = 'Note: This is a **mock payment page**. Your card will not be charged. Upon completion, your account will be upgraded.';
+
+            } else { // PayPal
+                cardDetails.style.display = 'none';
+                // Remove required attribute for PayPal
+                cardInputs.forEach(input => input.required = false);
+
+                confirmButton.disabled = false;
+                confirmButton.innerHTML = '<i class="fa-brands fa-paypal mr-2"></i> Continue to PayPal';
+                mockMessage.innerHTML = 'Note: Clicking the button will simulate the **PayPal payment and secure redirection** back to your dashboard.';
+            }
+        }
+
+        // === 3. Submission Handler (Simulated Redirect/Delay) ===
+
+        function handleFormSubmission(event) {
+            const selectedMethod = document.querySelector('input[name="method"]:checked').value;
+
+            if (selectedMethod === 'paypal') {
+                event.preventDefault(); // Stop immediate form submission
+
+                // 1. Display processing message
+                confirmButton.disabled = true;
+                confirmButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Redirecting to PayPal...';
+                mockMessage.innerHTML = 'Payment initiated. Simulating **5-second payment process**...';
+
+                // 2. Simulate 5 second delay (external payment gateway processing)
+                setTimeout(() => {
+                    mockMessage.innerHTML = 'Payment complete. **Redirecting you back to SwiftHire...**';
+
+                    // 3. Final Redirect to the server's success handler
+                    window.location.href = `/premium/complete?paymentId=${paymentId}&tier=${tier}`;
+                }, 5000); // 5 seconds delay
+            }
+            // For 'card', the form submits normally via GET to /premium/complete
+            // The required fields validation handles itself before this logic runs.
+        }
+
+        // Attach listeners
+        paymentOptions.forEach(radio => radio.addEventListener('change', toggleCardForm));
+        form.addEventListener('submit', handleFormSubmission);
+
+        toggleCardForm(); // Initialize state
+    });
+</script>
+
+</body>
+</html>

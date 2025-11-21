@@ -1,0 +1,1402 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Job Seeker Dashboard | SwiftHire</title>
+
+    <link rel="icon" type="image/png" th:href="@{/images/nav.png}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
+    <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}"/>
+    <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : ''}"/>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        teal: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            500: '#008080',
+                            600: '#008080',
+                            700: '#008080',
+                            800: '#008080',
+                            900: '#008080',
+                        },
+                        'premium-gold': {
+                            DEFAULT: '#FFD700'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            --teal: #008080;
+            --white: #ffffff;
+            --premium-gold: #FFD700;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f8f9fa;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .main-container {
+            display: flex;
+            height: 100vh;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            background: var(--teal);
+            height: 100vh;
+            width: 16rem;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            padding: 0 1.5rem 1.5rem 1.5rem;
+        }
+
+        .sidebar-scroll-area {
+            overflow-y: auto;
+            flex-grow: 1;
+            padding-top: 1rem;
+        }
+
+        .nav-link {
+            color: white !important;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-link.active-nav {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.15)) !important;
+            box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.1);
+            color: white !important;
+        }
+
+        .nav-link:not(.active-nav):hover {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.08)) !important;
+        }
+
+        .nav-link.active-nav::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: white;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        .badge-count-white {
+            background: rgba(255, 255, 255, 0.25);
+            color: white;
+        }
+
+        .sidebar-scroll-area::-webkit-scrollbar { width: 6px; }
+        .sidebar-scroll-area::-webkit-scrollbar-track { background: transparent; }
+        .sidebar-scroll-area::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.3); border-radius: 3px; }
+        .sidebar-scroll-area::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.5); }
+
+        .main-content-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .content-area-container {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+            background: #f8f9fa;
+        }
+
+        .stat-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 4px 12px rgba(0, 128, 128, 0.15);
+            border-color: var(--teal);
+        }
+
+        .stat-card::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--teal), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.6s;
+        }
+
+        .stat-card:hover::after {
+            transform: translateX(100%);
+        }
+
+        .content-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .modern-chart-container {
+            background: linear-gradient(145deg, #ffffff, #f8f9fa);
+            border-radius: 24px;
+            box-shadow:
+                    20px 20px 60px #d1d5db,
+                    -20px -20px 60px #ffffff,
+                    inset 0 0 0 1px rgba(0, 128, 128, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .modern-chart-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #008080, #00a0a0, #008080);
+            background-size: 200% 100%;
+            animation: shimmer 3s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        .chart-glow {
+            filter: drop-shadow(0 0 20px rgba(0, 128, 128, 0.2));
+        }
+
+        .input-field {
+            background: white;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s;
+        }
+
+        .input-field:focus {
+            border-color: var(--teal);
+            box-shadow: 0 0 0 3px rgba(0, 128, 128, 0.1);
+            outline: none;
+        }
+
+        .btn-primary {
+            background: var(--teal);
+            color: white;
+            transition: all 0.3s;
+        }
+
+        .btn-primary:hover {
+            background: #006666;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 128, 128, 0.3);
+        }
+
+        /* View Transition Styles */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .view-content {
+            transition: transform 0.3s ease-in-out;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            padding: 20px 30px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .view-content.inactive {
+            transform: translateX(100%);
+            display: none;
+        }
+
+        .view-content.active {
+            transform: translateX(0);
+            display: block;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .view-content.active-flex {
+            transform: translateX(0);
+            display: flex;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        /* Progress Bar (Theme matching) */
+        .progress-bar-limit {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .progress-limit {
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 4px;
+            transition: width 0.6s ease;
+        }
+
+        /* Job Card Styling */
+        .job-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 16px;
+            transition: all 0.3s;
+            display: flex;
+            gap: 24px;
+            text-decoration: none;
+            color: inherit;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .job-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 128, 128, 0.15);
+            border-color: var(--teal);
+        }
+
+        .job-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: var(--teal);
+            transform: scaleY(0);
+            transition: transform 0.3s;
+        }
+
+        .job-card:hover::before {
+            transform: scaleY(1);
+        }
+
+        /* Chat Styles (Theme matching) */
+        .chat-layout {
+            display: flex;
+            height: 100%;
+            width: 100%;
+            padding: 0;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .chat-sidebar {
+            width: 300px;
+            background: #ffffff;
+            border-right: 1px solid #e5e7eb;
+            overflow-y: auto;
+            flex-shrink: 0;
+            height: 100%;
+        }
+
+        .chat-sidebar-header {
+            padding: 1.25rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .chat-sidebar-header h2 {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #008080;
+            margin: 0;
+        }
+
+        .chat-list {
+            overflow-y: auto;
+        }
+
+        .chat-list-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid #f1f3f5;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .chat-list-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .chat-list-item.active-chat {
+            background-color: #e6f7f7;
+        }
+
+        .chat-list-item img, .chat-list-item .avatar-placeholder {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+
+        .avatar-placeholder {
+            background-color: #008080;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .chat-item-details { overflow: hidden; }
+        .chat-item-details .name {
+            font-weight: 600;
+            color: #333;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .chat-item-details .preview {
+            font-size: 0.9em;
+            color: #6c757d;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .chat-main {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            background: #f7f9fb;
+        }
+
+        .chat-main-header {
+            flex-shrink: 0;
+            padding: 1rem;
+            background-color: white;
+            border-bottom: 1px solid #e5e7eb;
+            font-weight: bold;
+        }
+
+        .chat-main .message-history {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .chat-main .input-group {
+            flex-shrink: 0;
+            padding: 1rem;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .message-bubble {
+            max-width: 70%;
+            padding: 10px 15px;
+            border-radius: 15px;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+            line-height: 1.4;
+            clear: both;
+        }
+
+        .sent {
+            float: right;
+            background-color: #008080;
+            color: white;
+            border-bottom-right-radius: 4px;
+            margin-left: auto;
+        }
+
+        .received {
+            float: left;
+            background-color: #e9ecef;
+            color: #333;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-time {
+            display: block;
+            font-size: 0.65rem;
+            margin-top: 5px;
+            opacity: 0.7;
+            text-align: right;
+            color: inherit;
+        }
+
+        .chat-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            text-align: center;
+            color: #6c757d;
+        }
+
+        .support-chat-layout {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            width: 100%;
+            padding: 0;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .support-chat-header {
+            flex-shrink: 0;
+            padding: 1rem;
+            background-color: white;
+            border-bottom: 1px solid #e5e7eb;
+            font-weight: bold;
+            font-size: 1.2em;
+            color: #008080;
+        }
+
+        .support-chat-header i { margin-right: 8px; }
+
+        .message-history {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background-color: #f7f9fb;
+        }
+
+        .input-group {
+            flex-shrink: 0;
+            padding: 1rem;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+        }
+
+        .input-group input {
+            flex-grow: 1;
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 20px;
+            margin-right: 10px;
+        }
+
+        /* --- MODAL (POP-UP) STYLES --- */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            backdrop-filter: blur(4px);
+        }
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-box {
+            background: #fff;
+            padding: 25px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+        }
+        .modal-overlay.show .modal-box {
+            transform: scale(1);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1.25rem;
+            color: #008080;
+        }
+
+        /* --- BUTTON STYLING --- */
+        .btn {
+            display: inline-block;
+            font-weight: 600;
+            text-align: center;
+            cursor: pointer;
+            border: 1px solid transparent;
+            padding: .5rem 1rem;
+            font-size: 1rem;
+            border-radius: 0.375rem;
+            text-decoration: none;
+            transition: all 0.2s ease-in-out;
+        }
+        .btn:hover {
+            transform: scale(1.03);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .btn-primary-themed {
+            color: #fff;
+            background-color: #008080;
+            border-color: #008080;
+        }
+        .btn-primary-themed:hover { background-color: #006666; }
+
+        .btn-secondary-themed {
+            background-color: transparent;
+            color: #555;
+            border: 1px solid #ccc;
+        }
+        .btn-secondary-themed:hover {
+            background-color: #f8f9fa;
+        }
+
+        .input-group button {
+            background-color: #008080;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        .input-group button:hover {
+            background-color: #006666;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            z-index: 50;
+            min-width: 220px;
+            overflow: hidden;
+            animation: dropdownOpen 0.2s ease-out;
+        }
+
+        @keyframes dropdownOpen {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                transform: translateY(0);
+            }
+        }
+
+        .dropdown-menu button {
+            width: 100%;
+            text-align: left;
+            padding: 12px 16px;
+            transition: all 0.2s;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .dropdown-menu button:hover {
+            background: #f8f9fa;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            z-index: 100;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .notification.success {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+        }
+
+        .notification.error {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+
+        .notification.info {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        .premium-text {
+            color: var(--white);
+            font-size: 0.9em;
+        }
+        /* Custom Styles for Chat Bubbles (For AI/Support) */
+        .ai-bubble {
+            float: left;
+            background-color: #e6f7f7;
+            color: #008080;
+            border-bottom-left-radius: 4px;
+            font-weight: 500;
+        }
+
+        /* AI Response Formatting */
+        .ai-message-content {
+            word-wrap: break-word;
+            white-space: normal;
+        }
+        .ai-message-content p {
+            margin-bottom: 0.75rem;
+            line-height: 1.6;
+        }
+        .ai-message-content p:last-child {
+            margin-bottom: 0;
+        }
+        .ai-message-content ul,
+        .ai-message-content ol {
+            margin-left: 1.25rem;
+            margin-bottom: 0.75rem;
+            list-style-position: outside;
+        }
+        .ai-message-content ul {
+            list-style-type: disc;
+        }
+        .ai-message-content ol {
+            list-style-type: decimal;
+        }
+        .ai-message-content li {
+            margin-bottom: 0.25rem;
+        }
+        .ai-message-content strong {
+            font-weight: 700;
+            color: #006666;
+        }
+        .ai-message-content h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--teal);
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="main-container">
+
+    <div class="sidebar text-white">
+
+        <div class="sidebar-header pt-6 pb-2">
+            <a th:href="@{/}" class="mb-4 flex justify-center py-2">
+                <img th:src="@{/images/logo-white.png}" alt="SwiftHire Logo" class="h-32 w-auto transform hover:scale-105 transition-transform duration-300">
+            </a>
+
+            <div class="flex flex-col items-center justify-center p-4 mb-4 bg-white/10 rounded-xl backdrop-blur-sm">
+                <img th:if="${user.profilePictureFilename != null}"
+                     th:src="@{/seeker/profile/pic/{userId}(userId=${user.id})}"
+                     alt="Profile" class="w-16 h-16 object-cover rounded-full ring-4 ring-white/30">
+                <div th:unless="${user.profilePictureFilename != null}"
+                     class="w-16 h-16 bg-white/20 flex items-center justify-center rounded-full ring-4 ring-white/30">
+                    <span class="font-bold text-white text-xl" th:text="${#strings.substring(user.firstName, 0, 1)}">A</span>
+                </div>
+                <p class="text-sm font-bold mt-3 text-white" th:text="${user.firstName + ' ' + user.lastName}">Anass BTK</p>
+                <p class="text-xs opacity-90 text-white">Job Seeker Dashboard</p>
+
+                <div th:if="${completeness != null}" class="w-full mt-3">
+                    <div class="text-xs text-white/90 mb-1">Profile: <span th:text="${completeness} + '%'" class="font-bold">70%</span></div>
+                    <div class="progress-bar-limit">
+                        <div class="progress-limit" th:style="'width:' + ${completeness} + '%;'"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar-scroll-area">
+
+            <div class="p-4 mb-4 bg-white/10 rounded-xl backdrop-blur-sm">
+                <p class="text-xs uppercase font-semibold text-white/70 mb-2">My Capacity</p>
+
+                <div th:if="${isPremium}">
+                    <p class="premium-text font-bold">
+                        <i class="fa-solid fa-star" style="color: var(--premium-gold);"></i> PREMIUM: UNLIMITED APPS
+                    </p>
+                </div>
+
+                <div th:unless="${isPremium}">
+                    <p class="premium-text">
+                        Active Apps:
+                        <span th:text="${activeApplicationsCount}"
+                              th:classappend="${activeApplicationsCount != null and applicationLimit != null and activeApplicationsCount >= applicationLimit ? 'text-red-300' : 'text-white'}">0</span>
+                        / <span th:text="${applicationLimit}">10</span>
+                    </p>
+                    <div class="progress-bar-limit my-2">
+                        <div class="progress-limit"
+                             th:with="count=${activeApplicationsCount ?: 0}, limit=${applicationLimit ?: 1},
+                                      percentage=${T(java.lang.Math).min(100.0, (count * 100.0) / limit)}"
+                             th:style="'width:' + ${percentage} + '%; background-color: ' + (${count >= limit ? '#ef4444' : 'rgba(255, 255, 255, 0.8)'})">
+                        </div>
+                    </div>
+                    <a th:href="@{/premium}" class="btn-primary w-full text-center font-bold py-2 px-4 rounded-lg mt-2 block" style="font-size: 0.85rem; background: var(--premium-gold); color: var(--teal); border: 1px solid var(--premium-gold);">
+                        <i class="fa-solid fa-rocket mr-1"></i> Go Premium
+                    </a>
+                </div>
+            </div>
+            <nav class="space-y-2 sidebar-nav">
+
+                <a href="#" data-view="dashboard" id="nav-dashboard"
+                   th:classappend="${currentView == 'dashboard' || currentView == null ? 'active-nav' : ''}"
+                   class="nav-link flex items-center space-x-3 p-3 rounded-lg transition-all text-white">
+                    <i class="fa-solid fa-gauge-high w-5"></i>
+                    <span class="font-medium">Dashboard</span>
+                </a>
+
+                <div class="pt-4 mt-4 border-t border-white/20 space-y-2">
+                    <p class="text-xs uppercase font-semibold opacity-70 px-3 mb-3 text-white">JOB SEARCH</p>
+
+                    <a href="#" data-view="jobs" id="nav-jobs"
+                       th:classappend="${currentView == 'jobs' ? 'active-nav' : ''}"
+                       class="nav-link flex items-center justify-between p-3 rounded-lg transition-all text-white">
+                        <div class="flex items-center space-x-3">
+                            <i class="fa-solid fa-magnifying-glass w-5"></i>
+                            <span class="font-medium">Find Jobs</span>
+                        </div>
+                        <span th:if="${jobs != null and jobs.size() > 0}"
+                              class="badge-count-white text-xs font-bold px-2 py-1 rounded-full"
+                              th:text="${jobs.size()}">5</span>
+                    </a>
+
+                    <a href="#" data-view="tracker" id="nav-tracker"
+                       th:classappend="${currentView == 'tracker' ? 'active-nav' : ''}"
+                       class="nav-link flex items-center justify-between p-3 rounded-lg transition-all text-white">
+                        <div class="flex items-center space-x-3">
+                            <i class="fa-solid fa-list-check w-5"></i>
+                            <span class="font-medium">My Applications</span>
+                        </div>
+                    </a>
+
+                    <a href="#" data-view="chats" id="nav-chats"
+                       th:classappend="${currentView == 'chats' ? 'active-nav' : ''}"
+                       class="nav-link flex items-center justify-between p-3 rounded-lg transition-all text-white">
+                        <div class="flex items-center space-x-3">
+                            <i class="fa-solid fa-comment-dots w-5"></i>
+                            <span class="font-medium">Messages</span>
+                        </div>
+                        <span th:if="${activeChats != null and activeChats.size() > 0}"
+                              class="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full animate-pulse"
+                              th:text="${activeChats.size()}">2</span>
+                    </a>
+
+                    <a href="#" data-view="support" id="nav-support"
+                       th:classappend="${currentView == 'support' ? 'active-nav' : ''}"
+                       class="nav-link flex items-center space-x-3 p-3 rounded-lg transition-all text-white">
+                        <i class="fa-solid fa-headset w-5"></i>
+                        <span class="font-medium">Support Chat</span>
+                    </a>
+
+                    <a th:if="${isPremium}" href="#" data-view="ai-assistant" id="nav-ai"
+                       th:classappend="${currentView == 'ai-assistant' ? 'active-nav' : ''}"
+                       class="nav-link flex items-center space-x-3 p-3 rounded-lg transition-all text-white">
+                        <i class="fa-solid fa-robot w-5" style="color: var(--premium-gold);"></i>
+                        <span class="font-medium">AI Job Assistant</span>
+                    </a>
+                    <a th:unless="${isPremium}"
+                       href="#"
+                       id="nav-ai-locked" class="nav-link flex items-center space-x-3 p-3 rounded-lg transition-all text-white/50">
+                        <i class="fa-solid fa-lock w-5"></i>
+                        <span class="font-medium">AI Job Assistant (Locked)</span>
+                    </a>
+
+                    <a th:href="@{/seeker/dashboard(view='jobs', recommended='true')}"
+                       class="btn-primary w-full text-center font-bold py-3 px-4 rounded-lg mt-4 block">
+                        <i class="fa-solid fa-sparkles mr-2"></i>AI Job Matches
+                    </a>
+                </div>
+            </nav>
+        </div>
+
+        <div class="mt-auto space-y-2 pt-4 border-t border-white/20">
+            <a th:href="@{/seeker/profile/edit}"
+               class="flex items-center space-x-3 p-3 rounded-lg transition-all hover:bg-white/10 text-white">
+                <i class="fa-solid fa-user-pen w-5"></i>
+                <div>
+                    <span class="text-sm font-medium">Edit Profile</span>
+                    <p class="text-xs opacity-70">Update Resume</p>
+                </div>
+            </a>
+
+            <form th:action="@{/logout}" method="post" style="display: block;">
+                <button type="submit"
+                        class="flex items-center space-x-3 p-3 rounded-lg transition-all hover:bg-red-500/20 text-white w-full text-left border-none bg-transparent cursor-pointer">
+                    <i class="fa-solid fa-right-from-bracket w-5"></i>
+                    <span class="text-sm font-medium">Logout</span>
+                </button>
+            </form>
+        </div>
+    </div>
+    <div class="main-content-wrapper">
+
+        <header class="bg-white border-b border-gray-200 p-6 z-40">
+            <div th:if="${successMessage}" class="notification success">
+                <span th:text="${successMessage}">Success message</span>
+            </div>
+            <div th:if="${errorMessage}" class="notification error">
+                <span th:text="${errorMessage}">Error message</span>
+            </div>
+
+            <h1 class="text-3xl font-bold text-gray-800" id="main-header-title">Job Seeker Dashboard</h1>
+        </header>
+
+        <div class="content-area-container">
+
+            <div id="dashboard-view"
+                 th:classappend="${currentView == 'dashboard' || currentView == null ? 'active' : 'inactive'}"
+                 class="view-content">
+                <div class="space-y-6">
+                    <section class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                        <div class="stat-card p-6 rounded-xl">
+                            <h3 class="text-sm font-medium text-gray-600">Available Jobs</h3>
+                            <p class="text-3xl font-bold text-gray-800 mt-2" th:text="${jobs != null ? jobs.size() : 0}">0</p>
+                        </div>
+                        <div class="stat-card p-6 rounded-xl">
+                            <h3 class="text-sm font-medium text-gray-600">Applications Sent</h3>
+                            <p class="text-3xl font-bold text-blue-600 mt-2" th:text="${#lists.size(activeChats)}">0</p>
+                        </div>
+                        <div class="stat-card p-6 rounded-xl">
+                            <h3 class="text-sm font-medium text-gray-600">Under Review</h3>
+                            <p class="text-3xl font-bold text-yellow-600 mt-2">0</p>
+                        </div>
+                        <div class="stat-card p-6 rounded-xl">
+                            <h3 class="text-sm font-medium text-gray-600">Accepted</h3>
+                            <p class="text-3xl font-bold text-green-600 mt-2">0</p>
+                        </div>
+                        <div class="stat-card p-6 rounded-xl">
+                            <h3 class="text-sm font-medium text-gray-600">Messages</h3>
+                            <p class="text-3xl font-bold text-purple-600 mt-2" th:text="${activeChats != null ? activeChats.size() : 0}">0</p>
+                        </div>
+                    </section>
+
+                    <section class="modern-chart-container p-8">
+                        <div class="flex items-center justify-between mb-6">
+                            <div>
+                                <h3 class="text-2xl font-bold text-gray-800">Your Application Journey</h3>
+                                <p class="text-sm text-gray-500 mt-1">Track your job search progress</p>
+                            </div>
+                            <div class="flex space-x-2" style="position: relative;">
+                                <button id="export-btn" class="px-4 py-2 bg-teal-50 text-teal-600 rounded-lg text-sm font-medium hover:bg-teal-100 transition-colors">
+                                    <i class="fa-solid fa-download mr-2"></i>Export
+                                </button>
+                                <button id="filter-btn" class="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
+                                    <i class="fa-solid fa-filter mr-2"></i>Filter
+                                </button>
+                            </div>
+                        </div>
+                        <div class="h-96 chart-glow">
+                            <canvas id="applicationChart"></canvas>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <div id="jobs-view" th:classappend="${currentView == 'jobs' ? 'active' : 'inactive'}" class="view-content">
+                <div class="space-y-6">
+                    <section class="content-card p-6">
+                        <form th:action="@{/seeker/dashboard}" method="get" class="space-y-4">
+                            <input type="hidden" name="view" value="jobs" />
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <input type="text" name="keyword" th:value="${searchKeyword}" placeholder="Job title or keyword" class="input-field p-3 rounded-lg">
+                                <input type="text" name="location" th:value="${searchLocation}" placeholder="Location" class="input-field p-3 rounded-lg">
+                                <select name="category" class="input-field p-3 rounded-lg">
+                                    <option value="">All Categories</option>
+                                    <option th:each="cat : ${jobCategories}" th:value="${cat}" th:text="${cat}" th:selected="${cat == selectedCategory}">IT</option>
+                                </select>
+                                <button type="submit" class="btn-primary p-3 rounded-lg font-bold">
+                                    <i class="fa-solid fa-search mr-2"></i>Search
+                                </button>
+                            </div>
+                        </form>
+                    </section>
+
+                    <div th:if="${jobs != null and !jobs.isEmpty()}">
+                        <a th:each="job : ${jobs}" th:href="@{/jobs/{id}(id=${job.id})}" class="job-card relative group">
+
+                            <div th:if="${job.isFeatured}"
+                                 class="absolute top-0 left-0 bg-yellow-100 text-yellow-800 text-xs font-bold px-3 py-1 rounded-br-lg border-b border-r border-yellow-300 z-20 shadow-sm">
+                                <i class="fa-solid fa-bolt mr-1 text-yellow-600"></i> Featured
+                            </div>
+                            <div th:if="${appliedJobIds.contains(job.id)}"
+                                 class="absolute top-0 right-0 bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-bl-lg border-b border-l border-green-200 z-10">
+                                <i class="fa-solid fa-check-circle mr-1"></i> Applied
+                            </div>
+
+                            <div class="w-20 h-20 flex-shrink-0 bg-gray-100 rounded-lg flex items-center justify-center">
+                                <img th:if="${job.postedBy.companyLogoFilename != null}" th:src="@{/employer/logos/download/{filename}(filename=${job.postedBy.companyLogoFilename})}" alt="Logo" class="w-full h-full object-contain rounded-lg">
+                                <span th:if="${job.postedBy.companyLogoFilename == null}" class="text-2xl font-bold text-teal-600" th:text="${job.postedBy.companyName != null ? #strings.substring(job.postedBy.companyName, 0, 1) : 'C'}">C</span>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="text-xl font-bold text-gray-800 mb-1" th:text="${job.title}">Job Title</h3>
+                                <p class="text-gray-600 mb-2" th:text="${job.postedBy.companyName}">Company</p>
+                                <div class="flex flex-wrap gap-4 text-sm text-gray-500">
+                                    <span><i class="fa-solid fa-location-dot mr-1"></i><span th:text="${job.locationCity}">Location</span></span>
+                                    <span><i class="fa-solid fa-briefcase mr-1"></i><span th:text="${job.jobType}">Type</span></span>
+                                    <span><i class="fa-solid fa-clock mr-1"></i>Posted <span th:text="${#temporals.format(job.postedAt, 'dd MMM yyyy')}">Date</span></span>
+                                </div>
+                            </div>
+
+                            <div class="text-right mt-6">
+                                <p class="text-xl font-bold text-teal-600" th:if="${job.salaryMin != null}">
+                                    $<span th:text="${#numbers.formatDecimal(job.salaryMin, 0, 'COMMA', 0, 'POINT')}">0</span> - $<span th:text="${#numbers.formatDecimal(job.salaryMax, 0, 'COMMA', 0, 'POINT')}">0</span>
+                                </p>
+                                <p class="text-gray-500" th:unless="${job.salaryMin != null}">Not Disclosed</p>
+
+                                <div class="mt-3">
+                                    <span th:if="${appliedJobIds.contains(job.id)}"
+                                          class="inline-block px-3 py-1 bg-green-50 text-green-600 rounded-full text-xs font-semibold border border-green-200">
+                                        View Status
+                                    </span>
+
+                                    <span th:if="${!appliedJobIds.contains(job.id) and limitReached}"
+                                          class="inline-block px-3 py-1 bg-gray-100 text-red-500 rounded-full text-xs font-bold border border-gray-200 cursor-not-allowed opacity-75"
+                                          title="Application limit reached (10/10). Upgrade to Premium to apply.">
+                                        <i class="fa-solid fa-lock mr-1"></i> Limit Reached
+                                    </span>
+
+                                    <span th:if="${!appliedJobIds.contains(job.id) and !limitReached}"
+                                          class="inline-block px-3 py-1 bg-teal-50 text-teal-600 rounded-full text-xs font-semibold border border-teal-200 group-hover:bg-teal-600 group-hover:text-white transition-colors">
+                                        Apply Now →
+                                    </span>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+
+                    <div th:if="${jobs == null or jobs.isEmpty()}" class="text-center py-12 text-gray-500">
+                        <i class="fa-solid fa-briefcase text-5xl mb-4"></i>
+                        <p>No jobs found matching your criteria</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tracker-view" th:classappend="${currentView == 'tracker' ? 'active' : 'inactive'}" class="view-content">
+                <div th:insert="~{seeker/application_tracker :: trackerContent}" style="padding: 10px;"></div>
+            </div>
+
+            <div id="chats-view" th:classappend="${currentView == 'chats' ? 'active-flex' : 'inactive'}" class="view-content chat-layout">
+                <div class="chat-sidebar">
+                    <div class="chat-sidebar-header"><h2>My Chats</h2></div>
+                    <div class="chat-list" id="employer-chat-list">
+                        <div th:each="chatApp : ${activeChats}" class="chat-list-item" th:data-appid="${chatApp.id}">
+                            <img th:if="${chatApp.job.postedBy.companyLogoFilename != null}" th:src="@{/employer/logos/download/{filename}(filename=${chatApp.job.postedBy.companyLogoFilename})}" alt="Logo" class="avatar-placeholder">
+                            <div th:if="${chatApp.job.postedBy.companyLogoFilename == null}" class="avatar-placeholder">
+                                <span th:text="${#strings.substring(chatApp.job.postedBy.companyName, 0, 1)}">C</span>
+                            </div>
+                            <div class="chat-item-details">
+                                <div class="name" th:text="${chatApp.job.postedBy.companyName}">Company</div>
+                                <div class="preview" th:text="${chatApp.job.title}">Job Title</div>
+                            </div>
+                        </div>
+                        <div th:if="${activeChats == null or activeChats.isEmpty()}" class="p-4 text-center text-gray-500">No active chats.</div>
+                    </div>
+                </div>
+                <div class="chat-main" id="employer-chat-main">
+                    <div class="chat-placeholder" id="chat-main-placeholder">
+                        <div>
+                            <i class="fa-solid fa-comments" style="font-size: 4em; color: #e0e0e0;"></i>
+                            <p style="margin-top: 10px;">Select a conversation from the left to start chatting.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="support-view" th:classappend="${currentView == 'support' ? 'active-flex' : 'inactive'}" class="view-content support-chat-layout">
+                <div class="support-chat-header"><i class="fa-solid fa-headset"></i> Live Support Channel (Admin)</div>
+                <div class="message-history" id="message-history-support">
+                    <div th:if="${supportNotes == null or supportNotes.isEmpty()}" style="text-align: center; color: #999; padding: 20px;">
+                        Welcome to Support Chat. Send a message and an Admin will reply soon.
+                    </div>
+                    <div th:each="note : ${supportNotes}">
+                        <div th:if="${note.senderRole == 'JOB_SEEKER'}" class="message-bubble sent">
+                            <span th:text="${note.message}">Your message</span>
+                            <span class="message-time" th:text="${#temporals.format(T(java.time.LocalDate).parse(note.createdAt), 'MMM dd')}">Nov 12</span>
+                        </div>
+                        <div th:if="${note.senderRole == 'ADMIN' or note.senderRole == 'SYSTEM_BOT'}" class="message-bubble received">
+                            <span th:text="${note.message}">Admin response</span>
+                            <span class="message-time" th:text="${#temporals.format(T(java.time.LocalDate).parse(note.createdAt), 'MMM dd')}">Nov 12</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <form id="support-chat-form" th:action="@{/seeker/support/note/add}" method="POST" style="display: flex; width: 100%;">
+                        <input type="hidden" name="view" value="support" />
+                        <input type="text" id="support-chat-input" name="message" placeholder="Type your support message..." required>
+                        <button type="submit" id="support-send-button">Send</button>
+                    </form>
+                </div>
+            </div>
+
+            <div id="ai-assistant-view"
+                 th:if="${isPremium}"
+                 th:classappend="${currentView == 'ai-assistant' ? 'active-flex' : 'inactive'}"
+                 class="view-content support-chat-layout">
+                <div class="support-chat-header"><i class="fa-solid fa-robot"></i> AI Job Assistant (Premium)</div>
+                <div class="message-history" id="message-history-ai">
+                    <div style="text-align: center; color: #999; padding: 20px;">
+                        Ask the AI Assistant questions about resume writing, interview techniques, or career advice.
+                    </div>
+                </div>
+                <div class="input-group">
+                    <form id="ai-chat-form" style="display: flex; width: 100%;">
+                        <input type="text" id="ai-chat-input" placeholder="Ask your career question..." required>
+                        <button type="submit" id="ai-send-button" class="bg-teal-500 hover:bg-teal-600">Ask AI</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    // --- JS VARIABLES FROM CONTROLLER ---
+    const currentViewGlobal = /*[[${currentView}]]*/ 'dashboard';
+    const currentSeekerIdGlobal = /*[[${user?.id}]]*/ null;
+    const activeChatsDataGlobal = /*[[${activeChatsJS}]]*/ [];
+    const isPremiumGlobal = /*[[${isPremium}]]*/ false;
+    const currentUser = /*[[${user?.username}]]*/ 'user';
+    const currentDateTime = new Date().toISOString();
+    const activeChatsCount = /*[[${activeChats != null ? activeChats.size() : 0}]]*/ 0;
+    const jobsCount = /*[[${jobs != null ? jobs.size() : 0}]]*/ 0;
+    // CRITICAL: Get CSRF token from meta tags
+    const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+
+    let myChart = null;
+    let currentChartFilter = 'all';
+
+    // --- UTILITY FUNCTIONS ---
+    function showNotification(message, type = 'success') {
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.innerHTML = `<div class="flex items-center"><i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-times-circle' : 'fa-info-circle'} mr-3"></i><span>${message}</span></div>`;
+        document.body.appendChild(notification);
+        setTimeout(() => {
+            notification.style.animation = 'slideIn 0.3s ease-out reverse';
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
+    }
+
+    function getFilteredChartData(filter) {
+        let multiplier = 1;
+        switch(filter) {
+            case 'today': multiplier = 0.2; break;
+            case 'last7days': multiplier = 0.5; break;
+            case 'last30days': multiplier = 0.8; break;
+        }
+        return {
+            labels: ['Available Jobs', 'Applications', 'Messages', 'Interviews', 'Offers'],
+            data: [Math.round(jobsCount * multiplier), Math.round(activeChatsCount * multiplier), Math.round(activeChatsCount * multiplier), 0, 0]
+        };
+    }
+
+    function initChart(filterType = 'all') {
+        const ctx = document.getElementById('applicationChart');
+        if (!ctx) return;
+        if (myChart) myChart.destroy();
+        const chartData = getFilteredChartData(filterType);
+        myChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: chartData.labels,
+                datasets: [{
+                    label: 'Your Job Search Stats',
+                    data: chartData.data,
+                    backgroundColor: ['rgba(0, 128, 128, 0.8)', 'rgba(59, 130, 246, 0.8)', 'rgba(147, 51, 234, 0.8)', 'rgba(251, 191, 36, 0.8)', 'rgba(16, 185, 129, 0.8)'],
+                    borderColor: ['rgb(0, 128, 128)', 'rgb(59, 130, 246)', 'rgb(147, 51, 234)', 'rgb(251, 191, 36)', 'rgb(16, 185, 129)'],
+                    borderWidth: 2,
+                    borderRadius: 8
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'top' } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+        });
+    }
+
+    function applyFilter(filter) {
+        currentChartFilter = filter;
+        initChart(filter);
+        const filterText = { 'all': 'All Time', 'last30days': 'Last 30 Days', 'last7days': 'Last 7 Days', 'today': 'Today' };
+        showNotification(`Filter applied: ${filterText[filter]}`, 'info');
+    }
+
+    function exportChart(format) {
+        const currentDate = new Date().toISOString().slice(0, 10);
+        if (format === 'png') {
+            const link = document.createElement('a');
+            link.download = `job-seeker-stats-${currentDate}-${currentUser}.png`;
+            link.href = myChart.toBase64Image();
+            link.click();
+            showNotification('Chart exported as PNG!', 'success');
+        } else if (format === 'csv') {
+            let csv = `Metric,Count\nAvailable Jobs,${jobsCount}\nApplications,${activeChatsCount}\nMessages,${activeChatsCount}\n\nGenerated: ${currentDateTime} UTC\nUser: ${currentUser}\nFilter: ${currentChartFilter}`;
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const link = document.createElement('a');
+            link.download = `job-seeker-stats-${currentDate}-${currentUser}.csv`;
+            link.href = window.URL.createObjectURL(blob);
+            link.click();
+            showNotification('Data exported as CSV!', 'success');
+        } else if (format === 'json') {
+            const exportData = { metadata: { timestamp: currentDateTime + 'Z', user: currentUser, type: 'Job Seeker Statistics', filter: currentChartFilter }, data: { availableJobs: jobsCount, applications: activeChatsCount, messages: activeChatsCount } };
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+            const link = document.createElement('a');
+            link.download = `job-seeker-stats-${currentDate}-${currentUser}.json`;
+            link.href = window.URL.createObjectURL(blob);
+            link.click();
+            showNotification('Data exported as JSON!', 'success');
+        }
+    }
+
+    // --- AI CHAT LOGIC (Embedded) ---
+    // --- THIS IS THE UPDATED FUNCTION ---
+
+    // Create one Showdown converter to reuse
+    const showdownConverter = new showdown.Converter({
+        noHeaderId: true, // Prevents adding IDs to headings
+        simpleLineBreaks: true // Converts single newlines to <br>
+    });
+
+    function appendMessage(historyElement, message, sender, isAI = false) {
+        const bubbleClass = isAI ? 'ai-bubble' : 'sent';
+        const senderDisplay = isAI ? 'SwiftAI' : 'You';
+
+        let displayHTML;
+
+        if (isAI) {
+            // 1. Convert the AI's Markdown response to HTML
+            // First, un-escape newlines if they come as "\\n"
+            const cleanMessage = message.replace(/\\n/g, '\n');
+            displayHTML = showdownConverter.makeHtml(cleanMessage);
+        } else {
+            // 2. For user messages, just escape the text to prevent HTML injection
+            displayHTML = message
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/\n/g, '<br>');
+        }
+
+        const bubble = document.createElement('div');
+        bubble.className = `message-bubble ${bubbleClass} flex flex-col`;
+
+        // 3. Use the new CSS class to wrap the formatted content
+        bubble.innerHTML = `
+            <span class="text-xs font-semibold opacity-70 mb-1">${senderDisplay}:</span>
+            <div class="ai-message-content">
+                ${displayHTML}
+            </div>
+        `;
+
+        historyElement.appendChild(bubble);
+        historyElement.scrollTop = historyElement.scrollHeight;
+    }
+
+    async function handleAiSubmit(e) {
+        e.preventDefault();
+        const input = document.getElementById('ai-chat-input');
+        const history = document.getElementById('message-history-ai');
+        const message = input.value.trim();
+
+        if (!message) return;
+
+        // 1. Display user message immediately
+        appendMessage(history, message, 'user', false);
+        input.value = ''; // Clear input
+
+        // Show loading indicator
+        const loadingBubble = document.createElement('div');
+        loadingBubble.className = 'message-bubble received ai-bubble flex items-center animate-pulse';
+        loadingBubble.id = 'ai-loading';
+        loadingBubble.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Thinking...';
+        history.appendChild(loadingBubble);
+        history.scrollTop = history.scrollHeight;
+
+        try {
+            const response = await fetch('/seeker/api/ai/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    [csrfHeader]: csrfToken // Include CSRF token for security
+                },
+                body: JSON.stringify({ message: message })
+            });
+
+            // 2. Process response
+            const data = await response.json();
+
+            // Remove loading indicator
+            document.getElementById('ai-loading')?.remove();
+
+            let aiResponse = data.response || "An unknown error occurred.";
+
+            if (response.ok) {
+                appendMessage(history, aiResponse, 'ai', true);
+            } else if (response.status === 403) {
+                // Handle Premium Restriction
+                showNotification("AI Assistant: Access Denied. Feature requires Premium subscription.", 'error');
+                appendMessage(history, data.response || "Access Denied. Please upgrade to SwiftHire Premium.", 'ai', true);
+            } else {
+                showNotification("AI Request Failed. Please try again.", 'error');
+                appendMessage(history, data.response || "Sorry, I can't process that request right now.", 'ai', true);
+            }
+
+        } catch (error) {
+            console.error('AI Fetch Error:', error);
+            document.getElementById('ai-loading')?.remove();
+            showNotification('Network error occurred during AI request.', 'error');
+            appendMessage(history, "A communication error occurred. Check server logs.", 'ai', true);
+        }
+    }
+    // --- END: AI CHAT LOGIC ---
+
+    document.addEventListener('DOMContentLoaded', function() {
+        if (!currentViewGlobal || currentViewGlobal === 'dashboard') initChart();
+
+        // Attach AI submission handler
+        const aiForm = document.getElementById('ai-chat-form');
+        if (aiForm) {
+            aiForm.addEventListener('submit', handleAiSubmit);
+        }
+
+        // --- Existing Button Logic (Chart exports/filters) ---
+        const exportBtn = document.getElementById('export-btn');
+        if (exportBtn) {
+            exportBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                let dropdown = document.getElementById('export-dropdown');
+                if (dropdown) dropdown.remove();
+                dropdown = document.createElement('div');
+                dropdown.id = 'export-dropdown';
+                dropdown.className = 'dropdown-menu';
+                dropdown.style.position = 'absolute';
+                dropdown.style.top = '100%';
+                dropdown.style.left = '0';
+                dropdown.style.marginTop = '8px';
+                dropdown.innerHTML = `<button onclick="exportChart('png')" class="flex items-center text-gray-700"><i class="fas fa-image mr-3 text-teal-600"></i>Export as PNG</button><button onclick="exportChart('csv')" class="flex items-center text-gray-700"><i class="fas fa-file-csv mr-3 text-green-600"></i>Export as CSV</button><button onclick="exportChart('json')" class="flex items-center text-gray-700"><i class="fas fa-code mr-3 text-blue-600"></i>Export as JSON</button>`;
+                this.parentElement.appendChild(dropdown);
+            });
+        }
+
+        const filterBtn = document.getElementById('filter-btn');
+        if (filterBtn) {
+            filterBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                let dropdown = document.getElementById('filter-dropdown');
+                if (dropdown) dropdown.remove();
+                dropdown = document.createElement('div');
+                dropdown.id = 'filter-dropdown';
+                dropdown.className = 'dropdown-menu';
+                dropdown.style.position = 'absolute';
+                dropdown.style.top = '100%';
+                dropdown.style.right = '0';
+                dropdown.style.marginTop = '8px';
+                dropdown.innerHTML = `<button onclick="applyFilter('all')" class="flex items-center justify-between text-gray-700"><span><i class="fas fa-calendar-alt mr-2"></i>All Time</span>${currentChartFilter === 'all' ? '<i class=\"fas fa-check text-teal-600\"></i>' : ''}</button><button onclick="applyFilter('last30days')" class="flex items-center justify-between text-gray-700"><span><i class=\"fas fa-calendar-week mr-2\"></i>Last 30 Days</span>${currentChartFilter === 'last30days' ? '<i class=\"fas fa-check text-teal-600\"></i>' : ''}</button><button onclick="applyFilter('last7days')" class="flex items-center justify-between text-gray-700"><span><i class=\"fas fa-calendar-day mr-2\"></i>Last 7 Days</span>${currentChartFilter === 'last7days' ? '<i class=\"fas fa-check text-teal-600\"></i>' : ''}</button><button onclick="applyFilter('today')" class="flex items-center justify-between text-gray-700"><span><i class=\"fas fa-clock mr-2\"></i>Today</span>${currentChartFilter === 'today' ? '<i class=\"fas fa-check text-teal-600\"></i>' : ''}</button>`;
+                this.parentElement.appendChild(dropdown);
+            });
+        }
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('#export-btn') && !e.target.closest('#export-dropdown')) {
+                const dropdown = document.getElementById('export-dropdown');
+                if (dropdown) dropdown.remove();
+            }
+            if (!e.target.closest('#filter-btn') && !e.target.closest('#filter-dropdown')) {
+                const dropdown = document.getElementById('filter-dropdown');
+                if (dropdown) dropdown.remove();
+            }
+        });
+        //
+    });
+    /*]]>*/
+</script>
+
+<script src="/js/seeker-dashboard.js"></script>
+<div id="premium-modal-container" class="modal-overlay"> <div class="modal-box" style="max-width: 500px; text-align: center;">
+    <div class="modal-header" style="justify-content: center; border-bottom: none; padding-bottom: 0;">
+        <i class="fa-solid fa-star" style="font-size: 2.5rem; color: #FFD700;"></i>
+    </div>
+    <h3 style="font-size: 1.5rem; font-weight: 700; color: #333; margin-top: 1rem;">
+        Premium Feature Locked
+    </h3>
+    <p style="font-size: 1rem; color: #555; margin-top: 0.5rem; margin-bottom: 1.5rem;">
+        The AI Job Assistant is a premium feature. Please upgrade your plan to gain access.
+    </p>
+    <div style="display: flex; gap: 1rem; justify-content: center;">
+        <a href="#" id="premium-modal-close" class="btn btn-secondary-themed" style="flex: 1;">Close</a>
+        <a th:href="@{/premium}" class="btn btn-primary-themed" style="flex: 1; background-color: #FFD700; color: #333; border-color: #FFD700; font-weight: 700;">
+            Upgrade Now
+        </a>
+    </div>
+</div>
+</div>
+
+</body>
+</html>

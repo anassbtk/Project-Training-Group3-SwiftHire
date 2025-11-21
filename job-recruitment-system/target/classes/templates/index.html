@@ -1,0 +1,1242 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome - SwiftHire</title>
+
+    <link rel="icon" type="image/png" th:href="@{/images/nav.png}">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
+
+    <script>
+        // --- Tailwind Config (using your correct 'theme-teal' color) ---
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'sans-serif']
+                    },
+                    colors: {
+                        'theme-teal': {
+                            DEFAULT: '#008080', // Logo-matched teal
+                            '500': '#008080',
+                            '600': '#006666', // A darker shade
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Apply the custom font */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f9fafb; /* Light gray background */
+        }
+
+        /* Smooth scroll behavior (from version 2) */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* --- UPDATED: Geometric Loader (from version 2) --- */
+        #loader-wrapper {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            background: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.5s ease-out;
+        }
+        #loader-content {
+            text-align: center;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        #loader-logo {
+            animation: pulse 2.5s ease-in-out infinite;
+            z-index: 10;
+        }
+        #loader-text {
+            color: #006666;
+            margin-top: 1.5rem;
+            font-size: 1.25rem;
+            font-weight: 600;
+            z-index: 10;
+            animation: pulse-loader 1.5s ease-in-out infinite;
+        }
+        /* Loader tagline removed to match simpler version 2 loader content */
+        .shape {
+            position: absolute;
+            border-style: solid;
+            border-color: #008080; /* theme-teal */
+            opacity: 0;
+            z-index: 5;
+            top: 50%;
+            left: 50%;
+            transform-origin: center center;
+        }
+        .shape-1 {
+            width: 150px; height: 150px; border-width: 2px;
+            margin-top: -75px; margin-left: -75px;
+            animation: rotate-fade 8s ease-in-out infinite;
+        }
+        .shape-2 {
+            width: 250px; height: 250px; border-radius: 50%; border-width: 1px;
+            margin-top: -125px; margin-left: -125px;
+            animation: pulse-fade 6s ease-in-out infinite;
+        }
+        .shape-3 {
+            width: 200px; height: 200px; border-width: 1px;
+            margin-top: -100px; margin-left: -100px;
+            animation: rotate-fade 10s ease-in-out infinite reverse;
+        }
+        @keyframes rotate-fade {
+            0%, 100% { transform: rotate(0deg) scale(0.8); opacity: 0.2; }
+            50% { transform: rotate(180deg) scale(1); opacity: 0.7; }
+        }
+        @keyframes pulse-fade {
+            0%, 100% { transform: scale(0.9); opacity: 0.1; }
+            50% { transform: scale(1.1); opacity: 0.5; }
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+        }
+        @keyframes pulse-loader {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        /* --- END LOADER --- */
+
+        /* --- Modern Animation (kept for hero/initial loads) --- */
+        @keyframes fade-in-scale-up {
+            from { opacity: 0; transform: scale(0.98) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .animate-new {
+            animation: fade-in-scale-up 0.5s ease-out forwards;
+            opacity: 0;
+        }
+
+        /* Main content hidden until loader is done */
+        #main-content {
+            display: none;
+            opacity: 0;
+            animation: fade-in-scale-up 0.5s 0.2s ease-out forwards;
+        }
+
+        /* Header profile pic styles */
+        .header-profile-pic {
+            width: 32px; height: 32px; border-radius: 50%;
+            object-fit: cover; border: 1px solid #ddd;
+        }
+        .header-profile-placeholder {
+            width: 32px; height: 32px; border-radius: 50%;
+            background-color: #008080; /* theme-teal */
+            color: white; display: inline-flex;
+            align-items: center; justify-content: center;
+            font-weight: bold; font-size: 0.9em;
+        }
+
+        /* Logo hover effect (from version 1) */
+        .logo-link {
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        .logo-link:hover {
+            opacity: 0.85;
+            transform: scale(1.02);
+        }
+
+        /* Job Card Styles */
+        .job-card-link {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem; /* 6 */
+            padding: 1.5rem; /* 6 */
+            background-color: #ffffff;
+            border: 1px solid #e5e7eb; /* gray-200 */
+            border-radius: 0.5rem; /* lg */
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05); /* sm */
+            transition: all 0.2s ease-in-out; /* Updated for smoother hover */
+            text-decoration: none;
+        }
+        .job-card-link:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -4px rgba(0, 0, 0, 0.07); /* lg */
+            border-color: #008080; /* theme-teal */
+        }
+        .job-card-link:hover .job-card-logo-bg { /* Added logo scaling hover */
+            transform: scale(1.05);
+            transition: transform 0.3s ease;
+        }
+
+        @media (min-width: 768px) { /* md breakpoint */
+            .job-card-link {
+                flex-direction: row;
+                align-items: center;
+            }
+        }
+        .job-card-logo-bg {
+            height: 5rem; /* 20 */
+            width: 5rem; /* 20 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.5rem; /* lg */
+            border: 1px solid #f3f4f6; /* gray-100 */
+            flex-shrink: 0;
+        }
+        .job-card-logo-img {
+            height: 100%;
+            width: 100%;
+            object-fit: contain;
+            border-radius: 0.5rem; /* lg */
+        }
+        .job-card-logo-placeholder {
+            height: 5rem; /* 20 */
+            width: 5rem; /* 20 */
+            font-weight: 700; /* bold */
+            font-size: 1.875rem; /* 3xl */
+            color: #008080; /* theme-teal */
+            background-color: #f0fdfa; /* teal-50 */
+        }
+
+        /* Skill Card Styles */
+        .employer-skill-section {
+            padding-top: 3rem;
+            padding-bottom: 3rem;
+        }
+        .skill-card-link {
+            padding: 1.5rem 1rem;
+            background-color: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease-in-out;
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            height: 100%;
+        }
+        .skill-card-link:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.07);
+            border-color: #008080;
+            transform: translateY(-3px);
+        }
+        .skill-icon-bg {
+            height: 3rem;
+            width: 3rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.5rem;
+            background-color: #f0fdfa; /* theme-teal-50 */
+            color: #008080; /* theme-teal */
+            margin-bottom: 1rem;
+        }
+
+        /* --- How It Works Card Styles (from version 1) --- */
+        .how-it-works-card {
+            background: linear-gradient(135deg, #008080 0%, #006666 100%);
+            box-shadow: 0 8px 24px rgba(0, 128, 128, 0.15);
+            transition: all 0.3s ease-in-out;
+        }
+        .how-it-works-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 16px 32px rgba(0, 128, 128, 0.25);
+        }
+
+        /* --- Swiper Carousel Styles --- */
+        .testimonial-slider {
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            padding-bottom: 50px;
+        }
+        .swiper-slide {
+            box-sizing: border-box;
+            padding: 0 10px;
+        }
+        /* Custom Pagination Dots */
+        .swiper-pagination .swiper-pagination-bullet {
+            width: 10px;
+            height: 10px;
+            background-color: #d1d5db; /* gray-300 */
+            opacity: 1;
+            transition: background-color 0.2s;
+        }
+        .swiper-pagination .swiper-pagination-bullet-active {
+            background-color: #008080; /* theme-teal */
+        }
+        .testimonial-card { /* Added from V2 */
+            transition: transform 0.3s ease;
+        }
+        .testimonial-card:hover { /* Added from V2 */
+            transform: translateY(-5px);
+        }
+
+        /* --- Scroll Reveal Animations (from version 2) --- */
+        .scroll-reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+        .scroll-reveal.revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .scroll-reveal-scale {
+            opacity: 0;
+            transform: scale(0.95);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+        .scroll-reveal-scale.revealed {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* Enhanced button hover effects (from version 2) */
+        .btn-enhanced {
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-enhanced::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        .btn-enhanced:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        /* Decorative background shapes (from version 2) */
+        .bg-decoration {
+            position: absolute;
+            pointer-events: none;
+            opacity: 0.05;
+        }
+        .bg-circle-1 {
+            width: 400px;
+            height: 400px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #008080, #00a0a0);
+            top: -100px;
+            right: -100px;
+            animation: float-1 20s ease-in-out infinite;
+        }
+        .bg-circle-2 {
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: linear-gradient(225deg, #008080, #006666);
+            bottom: 100px;
+            left: -80px;
+            animation: float-2 15s ease-in-out infinite;
+        }
+        @keyframes float-1 {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(30px, -30px) rotate(120deg); }
+            66% { transform: translate(-20px, 20px) rotate(240deg); }
+        }
+        @keyframes float-2 {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(20px, 30px) rotate(180deg); }
+        }
+
+        /* Counter animation for statistics (from version 2) */
+        .stat-number {
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Category card icon pulse on hover (from version 2) */
+        .category-card-icon {
+            transition: all 0.3s ease;
+        }
+        .category-card:hover .category-card-icon {
+            animation: pulse-icon 1s ease infinite;
+        }
+        @keyframes pulse-icon {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        /* Animated Growth Chart (from version 2) */
+        .growth-bar {
+            width: 100%;
+            background-color: #e5e7eb;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            position: relative;
+            height: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .growth-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #008080, #006666);
+            border-radius: 0.5rem;
+            width: 0%;
+            transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        .growth-fill::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transform: translateX(-100%);
+            animation: shimmer 2s infinite;
+        }
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        .growth-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #374151;
+            text-align: center;
+        }
+        .growth-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #008080;
+            margin-top: 0.5rem;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.6s ease-out;
+        }
+        .growth-value.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .growth-item:hover .growth-value {
+            color: #006666;
+            transform: translateY(-2px);
+        }
+
+        /* --- Scroll to Top Button (from version 2) --- */
+        #scroll-to-top {
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(20px);
+            transition: all 0.3s ease-in-out;
+        }
+
+        #scroll-to-top.visible {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        #scroll-to-top:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 128, 128, 0.3);
+        }
+    </style>
+</head>
+<body class="font-['Inter',_sans-serif]">
+
+<div id="loader-wrapper">
+    <div id="loader-content">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+        <img id="loader-logo" class="h-40 w-auto" th:src="@{/images/logo.png}" alt="SwiftHire Logo">
+        <p id="loader-text">Finding your next opportunity...</p>
+        <p th:if="${#authorization.expression('!hasAuthority(''ADMIN'')')}" id="loader-tagline">Your Gateway to Opportunity</p>
+    </div>
+</div>
+
+<div id="main-content">
+
+    <header class="fixed top-0 left-0 w-full bg-white/90 backdrop-blur-sm shadow-md z-50 h-32">
+        <nav class="mx-auto flex max-w-7xl items-center justify-between p-4 lg:px-8 h-full">
+            <div class="flex lg:flex-1">
+                <a th:if="${#authorization.expression('hasAuthority(''ADMIN'')')}" th:href="@{/admin/dashboard}" class="logo-link -m-1.5 p-1.5 flex items-center gap-2">
+                    <img th:src="@{/images/logo.png}" alt="SwiftHire Logo" class="h-32 w-auto transform hover:scale-105 transition-transform duration-300">
+                </a>
+                <a th:unless="${#authorization.expression('hasAuthority(''ADMIN'')')}" th:href="@{/}" class="logo-link -m-1.5 p-1.5 flex items-center gap-2">
+                    <img th:src="@{/images/logo.png}" alt="SwiftHire Logo" class="h-32 w-auto transform hover:scale-105 transition-transform duration-300">
+                </a>
+            </div>
+
+            <div class="hidden lg:flex lg:gap-x-12">
+                <th:block sec:authorize="hasAuthority('ADMIN')">
+                    <a th:href="@{/admin/dashboard}" class="text-sm font-semibold leading-6 text-theme-teal">Dashboard</a>
+                    <a th:href="@{/admin/users}" class="text-sm font-semibold leading-6 text-gray-900 hover:text-theme-teal">Users</a>
+                </th:block>
+
+                <th:block sec:authorize="hasAuthority('EMPLOYER') and !hasAuthority('ADMIN')">
+                    <a th:href="@{/employer/dashboard}" class="text-sm font-semibold leading-6 text-theme-teal">Dashboard</a>
+                    <a th:href="@{/employer/dashboard(view='candidates')}" class="text-sm font-semibold leading-6 text-gray-900 hover:text-theme-teal">Candidates</a>
+                </th:block>
+
+                <th:block sec:authorize="hasAuthority('JOB_SEEKER') or !isAuthenticated()">
+                    <a th:href="@{/}" class="text-sm font-semibold leading-6 text-theme-teal">Home</a>
+                    <a th:href="@{/jobs/hub}" class="text-sm font-semibold leading-6 text-gray-900 hover:text-theme-teal">Find Jobs</a>
+                </th:block>
+                <a th:href="@{/about}" class="text-sm font-semibold leading-6 text-gray-900 hover:text-theme-teal">About</a>
+                <a th:href="@{/contact}" class="text-sm font-semibold leading-6 text-gray-900 hover:text-theme-teal">Contact</a>
+            </div>
+
+            <div class="hidden lg:flex lg:flex-1 lg:justify-end lg:items-center lg:gap-x-4">
+                <div sec:authorize="!isAuthenticated()">
+                    <a th:href="@{/login}" class="text-sm font-semibold leading-6 text-gray-900 hover:text-theme-teal">Sign in <span aria-hidden="true">&rarr;</span></a>
+                    <a th:href="@{/login?register=true}"
+                       class="ml-4 rounded-md bg-theme-teal px-3.5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-theme-teal-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-teal transition-all duration-200">
+                        Register
+                    </a>
+                </div>
+
+                <div sec:authorize="isAuthenticated()" class="flex items-center gap-x-4">
+                    <a sec:authorize="hasAuthority('JOB_SEEKER')" th:href="@{/seeker/dashboard}" class="text-sm font-semibold leading-6 text-gray-900 hover:text-theme-teal">My Dashboard</a>
+                    <a sec:authorize="hasAuthority('EMPLOYER') and !hasAuthority('ADMIN')" th:href="@{/employer/dashboard}" class="text-sm font-semibold leading-6 text-gray-900 hover:text-theme-teal">My Dashboard</a>
+                    <a sec:authorize="hasAuthority('ADMIN')" th:href="@{/admin/dashboard}" class="text-sm font-semibold leading-6 text-gray-900 hover:text-theme-teal">My Dashboard</a>
+
+                    <a th:if="${user != null}"
+                       th:href="@{${user.role.name == 'JOB_SEEKER' ? '/seeker/profile/edit' : (user.role.name == 'EMPLOYER' ? '/employer/company/edit' : '/admin/dashboard')}}">
+                        <th:block sec:authorize="hasAuthority('JOB_SEEKER')">
+                            <img th:if="${user.profilePictureFilename != null}"
+                                 th:src="@{/seeker/profile/pic/{userId}(userId=${user.id})}"
+                                 alt="Profile" class="header-profile-pic">
+                            <div th:unless="${user.profilePictureFilename != null}" class="header-profile-placeholder">
+                                <span th:text="${#strings.substring(user.firstName, 0, 1)}"></span>
+                            </div>
+                        </th:block>
+                        <th:block sec:authorize="hasAuthority('EMPLOYER')">
+                            <img th:if="${user.companyLogoFilename != null}"
+                                 th:src="@{/employer/logos/download/{filename}(filename=${user.companyLogoFilename})}"
+                                 alt="Logo" class="header-profile-pic">
+                            <div th:unless="${user.companyLogoFilename != null}" class="header-profile-placeholder">
+                                <span th:text="${user.companyName != null ? #strings.substring(user.companyName, 0, 1) : 'C'}">C</span>
+                            </div>
+                        </th:block>
+                        <th:block sec:authorize="hasAuthority('ADMIN')">
+                            <div class="header-profile-placeholder" style="background-color: #dc3545;">
+                                <span>A</span>
+                            </div>
+                        </th:block>
+                    </a>
+
+                    <form th:action="@{/logout}" method="post" class="inline">
+                        <button type="submit"
+                                class="rounded-md border border-theme-teal px-3.5 py-2 text-sm font-semibold text-theme-teal shadow-sm hover:bg-theme-teal/10 transition-all duration-200">
+                            Logout
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="relative flex flex-col min-h-screen pt-32">
+
+        <div class="relative bg-gray-900">
+            <img class="absolute inset-0 h-full w-full object-cover"
+                 src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=2071&auto=format=fit=crop"
+                 alt="Colleagues working together in an office.">
+            <div class="absolute inset-0 bg-theme-teal/80"></div>
+
+            <div class="relative mx-auto max-w-7xl py-24 px-6 lg:px-8 text-center">
+
+                <th:block sec:authorize="hasAuthority('ADMIN')">
+                    <div class="max-w-4xl mx-auto p-8 rounded-lg shadow-2xl border border-gray-700/50 bg-gray-900/50 backdrop-blur-sm animate-new" style="animation-delay: 0.1s;">
+
+                        <h1 class="text-4xl font-extrabold tracking-tight text-white sm:text-6xl">
+                            Welcome Back, Administrator.
+                        </h1>
+                        <p class="mt-4 mb-8 text-lg leading-8 text-teal-100">
+                            Your centralized control panel awaits. Review the queues and manage system access.
+                        </p>
+
+                        <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+
+                            <div class="bg-black/20 p-4 rounded-lg border border-teal-500/50 text-white">
+                                <h3 class="text-sm font-semibold text-teal-100">Jobs Pending Approval</h3>
+                                <p class="text-3xl font-bold mt-1 text-yellow-300"
+                                   th:text="${monthlyStats != null ? monthlyStats.pendingJobsCount : '0'}">0</p>
+                                <p class="text-xs text-teal-200">Requires immediate attention.</p>
+                            </div>
+
+                            <div class="bg-black/20 p-4 rounded-lg border border-teal-500/50 text-white">
+                                <h3 class="text-sm font-semibold text-teal-100">New Users This Month</h3>
+                                <p class="text-3xl font-bold mt-1 text-green-300"
+                                   th:text="${monthlyStats != null ? ((monthlyStats.newSeekers ?: 0) + (monthlyStats.newEmployers ?: 0)) : '0'}">0</p>
+                                <p class="text-xs text-teal-200">Total growth (Seekers & Employers).</p>
+                            </div>
+
+                            <div class="bg-black/20 p-4 rounded-lg border border-teal-500/50 text-white">
+                                <h3 class="text-sm font-semibold text-teal-100">Applications This Month</h3>
+                                <p class="text-3xl font-bold mt-1 text-blue-300"
+                                   th:text="${monthlyStats != null ? monthlyStats.applicationsThisMonth : '0'}">0</p>
+                                <p class="text-xs text-teal-200">Platform usage and engagement.</p>
+                            </div>
+                        </div>
+                        <div class="mt-10 max-w-xl mx-auto space-y-4">
+                            <a th:href="@{/admin/dashboard}"
+                               class="btn-enhanced flex w-full justify-center rounded-lg border border-transparent bg-white py-3 px-4 text-lg font-semibold text-theme-teal shadow-md transition-all duration-300 ease-in-out
+                                            hover:bg-gray-100
+                                            focus:outline-none focus:ring-2 focus:ring-theme-teal focus:ring-offset-2
+                                            transform hover:scale-105 active:scale-95">
+                                Go to Dashboard
+                            </a>
+                            <a th:href="@{/admin/users}"
+                               class="btn-enhanced flex w-full justify-center rounded-lg border border-transparent bg-theme-teal-600/80 py-3 px-4 text-lg font-semibold text-white shadow-md transition-all duration-300 ease-in-out
+                                            hover:bg-theme-teal-600
+                                            focus:outline-none focus:ring-2 focus:ring-theme-teal focus:ring-offset-2
+                                            transform hover:scale-105 active:scale-95">
+                                Manage Users
+                            </a>
+                        </div>
+                    </div>
+                </th:block>
+
+                <th:block sec:authorize="hasAuthority('EMPLOYER') and !hasAuthority('ADMIN')">
+                    <h1 class="text-4xl font-extrabold tracking-tight text-white sm:text-6xl animate-new" style="animation-delay: 0.1s;">
+                        Ready to Hire? Post Your Next Job.
+                    </h1>
+                    <p class="mt-6 text-lg leading-8 text-teal-100 animate-new" style="animation-delay: 0.2s;">
+                        Access thousands of qualified candidates and streamline your hiring process.
+                    </p>
+
+                    <div class="mt-10 max-w-xl mx-auto space-y-4 animate-new" style="animation-delay: 0.3s;">
+                        <a th:href="@{/employer/jobs/new}"
+                           class="btn-enhanced flex w-full justify-center rounded-lg border border-transparent bg-white py-3 px-4 text-lg font-semibold text-theme-teal shadow-md transition-all duration-300 ease-in-out
+                                            hover:bg-gray-100
+                                            focus:outline-none focus:ring-2 focus:ring-theme-teal focus:ring-offset-2
+                                            transform hover:scale-105 active:scale-95">
+                            Post A New Job
+                        </a>
+                        <a th:href="@{/employer/dashboard(view='candidates')}"
+                           class="btn-enhanced flex w-full justify-center rounded-lg border border-transparent bg-theme-teal-600/80 py-3 px-4 text-lg font-semibold text-white shadow-md transition-all duration-300 ease-in-out
+                                            hover:bg-theme-teal-600
+                                            focus:outline-none focus:ring-2 focus:ring-theme-teal focus:ring-offset-2
+                                            transform hover:scale-105 active:scale-95">
+                            Browse All Candidates
+                        </a>
+                    </div>
+
+                    <div class="employer-skill-section mt-16 max-w-7xl mx-auto animate-new" style="animation-delay: 0.4s;">
+                        <h2 class="text-3xl font-bold text-white mb-8">Browse Candidates By Key Skills</h2>
+                        <div th:if="${prominentSkills != null and !prominentSkills.isEmpty()}"
+                             class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6">
+
+                            <a th:each="skill, iterStat : ${prominentSkills}"
+                               th:href="@{/employer/dashboard(view='candidates', searchSkills=${skill})}"
+                               class="skill-card-link animate-new"
+                               th:style="'animation-delay: ' + ${0.5 + iterStat.index * 0.05} + 's;'">
+
+                                <div class="skill-icon-bg">
+                                    <i class="fa-solid fa-code text-xl"></i>
+                                </div>
+
+                                <div>
+                                    <h3 class="text-lg font-semibold text-gray-900 group-hover:text-theme-teal transition-colors" th:text="${skill}">Skill Name</h3>
+                                    <p class="mt-1 text-sm text-gray-500">
+                                        (<span th:text="${skillCounts[skill]}">0</span> Candidates)
+                                    </p>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </th:block>
+
+                <th:block sec:authorize="hasAuthority('JOB_SEEKER') or !isAuthenticated()">
+                    <h1 class="text-4xl font-extrabold tracking-tight text-white sm:text-6xl animate-new" style="animation-delay: 0.1s;">
+                        Find Your Next Opportunity
+                    </h1>
+                    <p class="mt-6 text-lg leading-8 text-teal-100 animate-new" style="animation-delay: 0.2s;">
+                        Search millions of jobs from top companies.
+                    </p>
+
+                    <form th:action="@{/jobs/hub}" method="get" class="mt-10 max-w-xl mx-auto space-y-4 animate-new" style="animation-delay: 0.3s;">
+                        <div>
+                            <label for="keyword" class="sr-only">Job Title or Keyword</label>
+                            <input type="text" id="keyword" name="keyword"
+                                   class="block w-full rounded-lg border border-gray-300 py-4 px-5 text-gray-900 shadow-lg transition duration-150 ease-in-out placeholder:text-gray-400 focus:border-theme-teal focus:outline-none focus:ring-2 focus:ring-theme-teal sm:text-lg"
+                                   placeholder="Job title, keyword, or company"
+                                   required>
+                        </div>
+                        <button type="submit"
+                                class="btn-enhanced flex w-full justify-center rounded-lg border border-transparent bg-white py-3 px-4 text-lg font-semibold text-theme-teal shadow-md transition-all duration-300 ease-in-out
+                                            hover:bg-gray-100
+                                            focus:outline-none focus:ring-2 focus:ring-theme-teal focus:ring-offset-2
+                                            transform hover:scale-105 active:scale-95">
+                            Search Jobs
+                        </button>
+                    </form>
+                </th:block>
+            </div>
+        </div>
+
+
+        <th:block sec:authorize="hasAuthority('JOB_SEEKER') or !isAuthenticated()">
+
+            <main class="mx-auto w-full max-w-7xl py-16 px-6 lg:px-8 bg-white z-10 scroll-reveal">
+                <div class="max-w-5xl mx-auto">
+                    <div class="text-center animate-new" style="animation-delay: 0.4s;">
+                        <p class="text-base font-semibold leading-7 text-theme-teal">RECENT JOB</p>
+                        <h2 class="mt-2 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">Featured Jobs</h2>
+                    </div>
+
+                    <div th:if="${featuredJobs == null or featuredJobs.isEmpty()}" class="mt-12 text-center text-gray-500 animate-new" style="animation-delay: 0.5s;">
+                        No featured jobs available right now.
+                    </div>
+
+                    <div class="mt-12 space-y-6">
+                        <a th:each="job, iterStat : ${featuredJobs != null ? featuredJobs : new java.util.ArrayList()}"
+                           th:href="@{/jobs/{id}(id=${job.id})}"
+                           class="job-card-link animate-new"
+                           th:style="'animation-delay: ' + ${0.5 + iterStat.index * 0.1} + 's;'">
+
+                            <div class="job-card-logo-bg" th:classappend="${job.postedBy.companyLogoFilename == null} ? 'job-card-logo-placeholder' : 'bg-white'">
+                                <img th:if="${job.postedBy.companyLogoFilename != null}"
+                                     th:src="@{/employer/logos/download/{filename}(filename=${job.postedBy.companyLogoFilename})}"
+                                     alt="Logo" class="job-card-logo-img">
+                                <span th:if="${job.postedBy.companyLogoFilename == null}" th:text="${job.postedBy.companyName != null ? #strings.substring(job.postedBy.companyName, 0, 1) : 'C'}">C</span>
+                            </div>
+
+                            <div class="flex-1 text-center md:text-left">
+                                <p class="text-xl font-semibold text-gray-900 group-hover:text-theme-teal" th:text="${job.title}">Job Title</p>
+                                <div class="flex flex-col md:flex-row items-center justify-center md:justify-start gap-x-4 gap-y-1 text-sm text-gray-600 mt-2">
+                                    <span th:text="${job.postedBy.companyName}">Company Name</span>
+                                    <span class="hidden md:inline text-gray-300">|</span>
+                                    <span class="flex items-center gap-1.5">
+                                         <i class="fa-solid fa-location-dot text-gray-400"></i>
+                                         <span th:text="${job.locationCity}">Location</span>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="flex-shrink-0 text-center md:text-left md:pr-8">
+                                <p class="text-lg font-medium text-gray-800" th:if="${job.salaryMin != null}" th:text="'$' + ${#numbers.formatDecimal(job.salaryMin, 0, 'COMMA', 0, 'POINT')} + ' - $' + ${#numbers.formatDecimal(job.salaryMax, 0, 'COMMA', 0, 'POINT')}">$3500 - $4000</p>
+                                <p class="text-lg font-medium text-gray-500" th:unless="${job.salaryMin != null}">Not Disclosed</p>
+                            </div>
+
+                            <div class="flex-shrink-0 w-full md:w-auto text-center md:text-right">
+                                <span class="inline-block rounded-full border border-theme-teal/50 bg-theme-teal/10 px-4 py-1.5 text-sm font-medium text-theme-teal-600" th:text="${job.jobType}">
+                                    Full Time
+                                </span>
+                                <p class="text-sm text-gray-500 mt-2" th:text="'Posted: ' + ${#temporals.format(job.postedAt, 'dd MMM yyyy')}">Posted 07 Nov 2025</p>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </main>
+
+            <section class="w-full bg-gray-50 py-20 z-10 animate-new scroll-reveal" style="animation-delay: 1.0s;">
+                <div class="mx-auto max-w-7xl px-6 lg:px-8">
+                    <div class="max-w-2xl mx-auto text-center animate-new" style="animation-delay: 1.1s;">
+                        <h2 class="mt-2 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">Browse By Category</h2>
+                        <p class="mt-4 text-lg leading-8 text-gray-600">Find the right job sector that matches your expertise.</p>
+                    </div>
+
+                    <div class="mt-16 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-5 gap-6">
+
+                        <a th:each="category, iterStat : ${jobCategories}"
+                           th:href="@{/seeker/dashboard(view='jobs', category=${category})}"
+                           class="category-card flex flex-col items-center justify-center p-8 text-center bg-white border border-gray-200 rounded-xl shadow-lg transition-all duration-300 hover:shadow-xl hover:border-theme-teal group animate-new"
+                           th:style="'animation-delay: ' + (${1.2 + iterStat.index * 0.1}) + 's;'">
+
+                            <div class="category-card-icon w-16 h-16 flex items-center justify-center rounded-full bg-theme-teal/10 group-hover:bg-theme-teal text-theme-teal group-hover:text-white transition-colors">
+                                <i class="fa-solid fa-briefcase text-3xl"></i>
+                            </div>
+
+                            <div class="mt-4">
+                                <h3 class="text-lg font-semibold text-gray-900 group-hover:text-theme-teal transition-colors" th:text="${category}">Category Name</h3>
+                                <p class="mt-1 text-sm text-gray-500">
+                                    (<span th:text="${jobCategoryCounts[iterStat.index]}">750</span>)
+                                </p>
+                            </div>
+                        </a>
+                    </div>
+
+                    <div class="mt-16 text-center animate-new" style="animation-delay: 2.3s;">
+                        <a th:href="@{/jobs/hub}"
+                           class="btn-enhanced inline-flex items-center rounded-md bg-theme-teal px-6 py-3 text-lg font-semibold text-white shadow-lg hover:bg-theme-teal-600 transition-all">
+                            View All Job Categories <i class="fa-solid fa-arrow-right ml-2"></i>
+                        </a>
+                    </div>
+                </div>
+            </section>
+        </th:block>
+
+        <th:block sec:authorize="!hasAuthority('ADMIN')">
+            <section class="w-full bg-theme-teal py-20 z-10 relative overflow-hidden animate-new scroll-reveal" style="animation-delay: 2.4s;">
+
+                <div class="absolute inset-0 opacity-10 text-white">
+                    <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="plusPattern" patternUnits="userSpaceOnUse" width="30" height="30" patternTransform="scale(1)"><rect x="0" y="0" width="100%" height="100%" fill="none"/><path d="M 15 0 V 30 M 0 15 H 30" stroke-width="0.5" stroke="currentColor" fill="none"/></pattern></defs><rect width="100%" height="100%" fill="url(#plusPattern)"/></svg>
+                </div>
+
+                <div class="mx-auto max-w-7xl px-6 lg:px-8 relative z-10">
+                    <div class="max-w-2xl mx-auto text-center">
+                        <h2 class="mt-2 text-4xl font-bold tracking-tight text-white sm:text-5xl">
+                            How It Works
+                        </h2>
+                        <p class="mt-4 text-lg leading-8 text-teal-100">
+                            <th:block sec:authorize="hasAuthority('EMPLOYER')">A simple 3-step process to find your next employee.</th:block>
+                            <th:block sec:authorize="!hasAuthority('EMPLOYER')">A simple process to find your dream job.</th:block>
+                        </p>
+                    </div>
+
+                    <div class="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
+
+                        <div class="how-it-works-card relative text-center p-8 rounded-lg shadow-lg border border-theme-teal/50 animate-new" style="animation-delay: 2.5s;">
+                            <span class="absolute top-4 left-4 text-5xl font-bold text-white opacity-20 z-0">01</span>
+                            <div class="relative z-10">
+                                <div class="flex items-center justify-center h-16 w-16 bg-white/10 text-white rounded-full mx-auto hover:bg-white/20 transition-colors">
+                                    <i th:classappend=" ${#authorization.expression('hasAuthority(''EMPLOYER'')') ? 'fa-solid fa-file-circle-plus' : 'fa-solid fa-user-plus'}" class="fa-solid fa-user-plus text-2xl"></i>
+                                </div>
+                                <h3 class="mt-6 text-xl font-semibold text-white">
+                                    <th:block sec:authorize="hasAuthority('EMPLOYER')">Post Job Requirement</th:block>
+                                    <th:block sec:authorize="!hasAuthority('EMPLOYER')">Create Account</th:block>
+                                </h3>
+                                <p class="mt-2 text-base text-teal-100">
+                                    <th:block sec:authorize="hasAuthority('EMPLOYER')">Define the job scope and required skills. Our admin team will approve it shortly.</th:block>
+                                    <th:block sec:authorize="!hasAuthority('EMPLOYER')">Sign up and create your profile to get started with our platform.</th:block>
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="how-it-works-card relative text-center p-8 rounded-lg shadow-lg border border-theme-teal/50 animate-new" style="animation-delay: 2.6s;">
+                            <span class="absolute top-4 left-4 text-5xl font-bold text-white opacity-20 z-0">02</span>
+                            <div class="relative z-10">
+                                <div class="flex items-center justify-center h-16 w-16 bg-white/10 text-white rounded-full mx-auto hover:bg-white/20 transition-colors">
+                                    <i th:classappend=" ${#authorization.expression('hasAuthority(''EMPLOYER'')') ? 'fa-solid fa-inbox' : 'fa-solid fa-file-arrow-up'}" class="fa-solid fa-file-arrow-up text-2xl"></i>
+                                </div>
+                                <h3 class="mt-6 text-xl font-semibold text-white">
+                                    <th:block sec:authorize="hasAuthority('EMPLOYER')">Review Applicants</th:block>
+                                    <th:block sec:authorize="!hasAuthority('EMPLOYER')">Upload CV/Resume</th:block>
+                                </h3>
+                                <p class="mt-2 text-base text-teal-100">
+                                    <th:block sec:authorize="hasAuthority('EMPLOYER')">Candidates apply instantly. View their profiles, resumes, and manage the hiring status.</th:block>
+                                    <th:block sec:authorize="!hasAuthority('EMPLOYER')">Build your profile and upload your resume to be seen by employers.</th:block>
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="how-it-works-card relative text-center p-8 rounded-lg shadow-lg border border-theme-teal/50 animate-new" style="animation-delay: 2.7s;">
+                            <span class="absolute top-4 left-4 text-5xl font-bold text-white opacity: 20 z-0">03</span>
+                            <div class="relative z-10">
+                                <div class="flex items-center justify-center h-16 w-16 bg-white/10 text-white rounded-full mx-auto hover:bg-white/20 transition-colors">
+                                    <i th:classappend=" ${#authorization.expression('hasAuthority(''EMPLOYER'')') ? 'fa-solid fa-handshake' : 'fa-solid fa-magnifying-glass'}" class="fa-solid fa-magnifying-glass text-2xl"></i>
+                                </div>
+                                <h3 class="mt-6 text-xl font-semibold text-white">
+                                    <th:block sec:authorize="hasAuthority('EMPLOYER')">Initiate Offer/Chat</th:block>
+                                    <th:block sec:authorize="!hasAuthority('EMPLOYER')">Find Suitable Job</th:block>
+                                </h3>
+                                <p class="mt-2 text-base text-teal-100">
+                                    <th:block sec:authorize="hasAuthority('EMPLOYER')">Use the built-in chat system to communicate with applicants and extend final job offers.</th:block>
+                                    <th:block sec:authorize="!hasAuthority('EMPLOYER')">Search and apply for the jobs that match your skills and passion.</th:block>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </th:block>
+
+        <section class="w-full bg-white py-20 z-10 relative overflow-hidden scroll-reveal">
+            <div class="bg-decoration bg-circle-1"></div>
+            <div class="bg-decoration bg-circle-2"></div>
+
+            <div class="mx-auto max-w-7xl px-6 lg:px-8 relative z-10">
+                <div class="max-w-2xl mx-auto text-center mb-16">
+                    <h2 class="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
+                        Success By The Numbers
+                    </h2>
+                    <p class="mt-4 text-lg leading-8 text-gray-600">
+                        Join thousands of professionals and companies finding success on our platform.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+                    <div class="text-center p-6 bg-gradient-to-br from-theme-teal/5 to-theme-teal/10 rounded-xl scroll-reveal-scale" style="transition-delay: 0.1s;">
+                        <div class="inline-flex items-center justify-center w-16 h-16 bg-theme-teal/10 rounded-full mb-4">
+                            <i class="fa-solid fa-briefcase text-3xl text-theme-teal"></i>
+                        </div>
+                        <p class="text-4xl font-bold text-gray-900 stat-number" data-target="5000">0</p>
+                        <p class="text-sm text-gray-600 mt-2">Active Job Postings</p>
+                    </div>
+
+                    <div class="text-center p-6 bg-gradient-to-br from-theme-teal/5 to-theme-teal/10 rounded-xl scroll-reveal-scale" style="transition-delay: 0.2s;">
+                        <div class="inline-flex items-center justify-center w-16 h-16 bg-theme-teal/10 rounded-full mb-4">
+                            <i class="fa-solid fa-building text-3xl text-theme-teal"></i>
+                        </div>
+                        <p class="text-4xl font-bold text-gray-900 stat-number" data-target="451">0</p>
+                        <p class="text-sm text-gray-600 mt-2">Companies Hiring</p>
+                    </div>
+
+                    <div class="text-center p-6 bg-gradient-to-br from-theme-teal/5 to-theme-teal/10 rounded-xl scroll-reveal-scale" style="transition-delay: 0.3s;">
+                        <div class="inline-flex items-center justify-center w-16 h-16 bg-theme-teal/10 rounded-full mb-4">
+                            <i class="fa-solid fa-users text-3xl text-theme-teal"></i>
+                        </div>
+                        <p class="text-4xl font-bold text-gray-900 stat-number" data-target="12500">0</p>
+                        <p class="text-sm text-gray-600 mt-2">Registered Job Seekers</p>
+                    </div>
+
+                    <div class="text-center p-6 bg-gradient-to-br from-theme-teal/5 to-theme-teal/10 rounded-xl scroll-reveal-scale" style="transition-delay: 0.4s;">
+                        <div class="inline-flex items-center justify-center w-16 h-16 bg-theme-teal/10 rounded-full mb-4">
+                            <i class="fa-solid fa-check-circle text-3xl text-theme-teal"></i>
+                        </div>
+                        <p class="text-4xl font-bold text-gray-900 stat-number" data-target="8900">0</p>
+                        <p class="text-sm text-gray-600 mt-2">Successful Placements</p>
+                    </div>
+                </div>
+
+                <div class="mt-16 max-w-4xl mx-auto">
+                    <div class="bg-gradient-to-r from-theme-teal/10 via-theme-teal/5 to-theme-teal/10 rounded-2xl p-8 scroll-reveal">
+                        <h3 class="text-2xl font-bold text-gray-900 text-center mb-10">Platform Growth This Year</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div class="growth-item">
+                                <p class="growth-label">January – March (Growth)</p>
+                                <div class="growth-bar">
+                                    <div class="growth-fill" style="width: 0%" data-target="60"></div>
+                                </div>
+                                <p class="growth-value">60%</p>
+                            </div>
+                            <div class="growth-item">
+                                <p class="growth-label">April – June (Growth)</p>
+                                <div class="growth-bar">
+                                    <div class="growth-fill" style="width: 0%" data-target="75"></div>
+                                </div>
+                                <p class="growth-value">75%</p>
+                            </div>
+                            <div class="growth-item">
+                                <p class="growth-label">July – September (Growth)</p>
+                                <div class="growth-bar">
+                                    <div class="growth-fill" style="width: 0%" data-target="85"></div>
+                                </div>
+                                <p class="growth-value">85%</p>
+                            </div>
+                            <div class="growth-item">
+                                <p class="growth-label">October – December (Growth)</p>
+                                <div class="growth-bar">
+                                    <div class="growth-fill" style="width: 0%" data-target="100"></div>
+                                </div>
+                                <p class="growth-value">100%</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <section class="w-full bg-gray-50 py-20 z-10 animate-new scroll-reveal" style="animation-delay: 2.8s;">
+            <div class="mx-auto max-w-7xl px-6 lg:px-8">
+                <div class="max-w-2xl mx-auto text-center">
+                    <h2 class="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">What Our Users Say</h2>
+                    <p class="mt-4 text-lg leading-8 text-gray-600">Feedback from talented professionals and top employers.</p>
+                </div>
+
+                <div class="swiper testimonial-slider mt-16 animate-new" style="animation-delay: 2.9s;">
+                    <div class="swiper-wrapper">
+
+                        <div class="swiper-slide">
+                            <div class="text-center p-8 testimonial-card">
+                                <div class="relative w-24 h-24 mx-auto">
+                                    <img class="w-24 h-24 rounded-full object-cover shadow-md" src="https://picsum.photos/seed/sarah/100/100" alt="Testimonial photo">
+                                    <span class="absolute -bottom-2 -right-2 text-5xl text-theme-teal">
+                                         <i class="fa-solid fa-quote-right"></i>
+                                    </span>
+                                </div>
+                                <blockquote class="mt-8 text-xl font-medium leading-9 text-gray-700 max-w-2xl mx-auto">
+                                    "SwiftHire made my job search incredibly easy. I found my dream job as a developer in just two weeks. The platform is intuitive and the employers are top-notch."
+                                </blockquote>
+                                <figcaption class="mt-8">
+                                    <div class="text-base font-semibold text-gray-900">Sarah K.</div>
+                                    <div class="text-sm text-gray-600">Senior Software Engineer</div>
+                                </figcaption>
+                            </div>
+                        </div>
+
+                        <div class="swiper-slide">
+                            <div class="text-center p-8 testimonial-card">
+                                <div class="relative w-24 h-24 mx-auto">
+                                    <img class="w-24 h-24 rounded-full object-cover shadow-md" src="https://picsum.photos/seed/michael/100/100" alt="Testimonial photo">
+                                    <span class="absolute -bottom-2 -right-2 text-5xl text-theme-teal">
+                                         <i class="fa-solid fa-quote-right"></i>
+                                    </span>
+                                </div>
+                                <blockquote class="mt-8 text-xl font-medium leading-9 text-gray-700 max-w-2xl mx-auto">
+                                    "As an employer, the candidate filtering and messaging system is fantastic. We filled three open positions faster than we ever have before. Highly recommend."
+                                </blockquote>
+                                <figcaption class="mt-8">
+                                    <div class="text-base font-semibold text-gray-900">Michael R.</div>
+                                    <div class="text-sm text-gray-600">HR Manager, TechCorp</div>
+                                </figcaption>
+                            </div>
+                        </div>
+
+                        <div class="swiper-slide">
+                            <div class="text-center p-8 testimonial-card">
+                                <div class="relative w-24 h-24 mx-auto">
+                                    <img class="w-24 h-24 rounded-full object-cover shadow-md" src="https://picsum.photos/seed/emily/100/100" alt="Testimonial photo">
+                                    <span class="absolute -bottom-2 -right-2 text-5xl text-theme-teal">
+                                         <i class="fa-solid fa-quote-right"></i>
+                                    </span>
+                                </div>
+                                <blockquote class="mt-8 text-xl font-medium leading-9 text-gray-700 max-w-2xl mx-auto">
+                                    "I was looking for my first internship and SwiftHire's profile builder helped me showcase my skills. I got accepted for a summer internship at a great company!"
+                                </blockquote>
+                                <figcaption class="mt-8">
+                                    <div class="text-base font-semibold text-gray-900">Emily L.</div>
+                                    <div class="text-sm text-gray-600">Computer Science Student</div>
+                                </figcaption>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="swiper-pagination"></div>
+                </div>
+
+            </div>
+        </section>
+
+
+        <footer class="w-full bg-gray-900 text-gray-400 py-16 z-10" style="border-top: 1px solid #374151;">
+            <div class="mx-auto max-w-7xl px-6 lg:px-8">
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
+
+                    <div>
+                        <h3 class="text-sm font-semibold uppercase text-white mb-4">About SwiftHire</h3>
+                        <p class="text-sm">
+                            Connecting talent with opportunity. We strive to make the hiring process seamless and efficient for both job seekers and employers.
+                        </p>
+                    </div>
+
+                    <div>
+                        <h3 class="text-sm font-semibold uppercase text-white mb-4">Contact Info</h3>
+                        <ul class="space-y-3 text-sm">
+                            <li>Address: No. 1 Qinggongyuan, Ganjingzi District, Dalian, Liaoning Province, China</li>
+                            <li>Phone: +86 15184002610</li>
+                            <li>Email: support@swifthire.com</li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h3 class="text-sm font-semibold uppercase text-white mb-4">Quick Links</h3>
+                        <ul class="space-y-3 text-sm">
+                            <th:block sec:authorize="hasAuthority('ADMIN')">
+                                <li><a th:href="@{/admin/dashboard}" class="hover:text-theme-teal transition-colors">Admin Dashboard</a></li>
+                                <li><a th:href="@{/admin/users}" class="hover:text-theme-teal transition-colors">User Management</a></li>
+                            </th:block>
+                            <th:block sec:authorize="hasAuthority('EMPLOYER') and !hasAuthority('ADMIN')">
+                                <li><a th:href="@{/employer/dashboard}" class="hover:text-theme-teal transition-colors">Dashboard</a></li>
+                                <li><a th:href="@{/employer/dashboard(view='candidates')}" class="hover:text-theme-teal transition-colors">Candidates</a></li>
+                            </th:block>
+                            <th:block sec:authorize="hasAuthority('JOB_SEEKER') or !isAuthenticated()">
+                                <li><a th:href="@{/}" class="hover:text-theme-teal transition-colors">Home</a></li>
+                                <li><a th:href="@{/jobs/hub}" class="hover:text-theme-teal transition-colors">Find Jobs</a></li>
+                            </th:block>
+                            <li><a th:href="@{/about}" class="hover:text-theme-teal transition-colors">About Us</a></li>
+                            <li><a th:href="@{/contact}" class="hover:text-theme-teal transition-colors">Contact</a></li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h3 class="text-sm font-semibold uppercase text-white mb-4">Newsletter</h3>
+                        <p class="text-sm mb-4">Get the latest job alerts and industry news delivered to your inbox.</p>
+                        <form action="#" method="POST">
+                            <label for="footer-email" class="sr-only">Email address</label>
+                            <div class="flex rounded-md shadow-sm">
+                                <input type="email" name="footer-email" id="footer-email"
+                                       class="block w-full min-w-0 flex-1 rounded-none rounded-l-md border-gray-300 bg-white/5 py-2 px-3 text-white placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-theme-teal sm:text-sm"
+                                       placeholder="Enter your email">
+                                <button type="submit"
+                                        class="relative -ml-px inline-flex items-center gap-x-1.5 rounded-r-md px-3 py-2 text-sm font-semibold text-white bg-theme-teal hover:bg-theme-teal-600">
+                                    <i class="fa-solid fa-paper-plane"></i>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="py-8 border-t border-gray-700/50">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
+                        <div>
+                            <a th:if="${#authorization.expression('hasAuthority(''ADMIN'')')}" th:href="@{/admin/dashboard}" class="-m-1.5 p-1.5 flex items-center gap-2 justify-center md:justify-start hover:opacity-80 transition-opacity">
+                                <img th:src="@{/images/logo.png}" alt="SwiftHire Logo" class="h-32 w-auto transform hover:scale-105 transition-transform duration-300">
+                                <span class="text-white font-semibold text-lg">SwiftHire</span>
+                            </a>
+                            <a th:unless="${#authorization.expression('hasAuthority(''ADMIN'')')}" th:href="@{/}" class="-m-1.5 p-1.5 flex items-center gap-2 justify-center md:justify-start hover:opacity-80 transition-opacity">
+                                <img th:src="@{/images/logo.png}" alt="SwiftHire Logo" class="h-32 w-auto transform hover:scale-105 transition-transform duration-300">
+                            </a>
+                        </div>
+                        <div>
+                            <p class="text-3xl font-bold text-white">5000+</p>
+                            <p class="text-sm text-gray-400">Active Job Postings</p>
+                        </div>
+                        <div>
+                            <p class="text-3xl font-bold text-white">451</p>
+                            <p class="text-sm text-gray-400">Companies Hiring</p>
+                        </div>
+                        <div>
+                            <p class="text-3xl font-bold text-white">568</p>
+                            <p class="text-sm text-gray-400">New Jobs This Week</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-8 mt-8 border-t border-gray-700/50 flex flex-col md:flex-row justify-between items-center text-sm">
+                    <p class="text-gray-500">&copy; 2025 SwiftHire. All rights reserved.</p>
+                    <div class="flex space-x-6 mt-4 md:mt-0">
+                        <a href="#" class="text-gray-500 hover:text-theme-teal transition-colors"><i class="fa-brands fa-facebook-f"></i></a>
+                        <a href="#" class="text-gray-500 hover:text-theme-teal transition-colors"><i class="fa-brands fa-twitter"></i></a>
+                        <a href="#" class="text-gray-500 hover:text-theme-teal transition-colors"><i class="fa-brands fa-linkedin-in"></i></a>
+                        <a href="#" class="text-gray-500 hover:text-theme-teal transition-colors"><i class="fa-brands fa-instagram"></i></a>
+                    </div>
+                </div>
+
+            </div>
+        </footer>
+
+        <a href="#" id="scroll-to-top" class="fixed bottom-8 right-8 bg-theme-teal hover:bg-theme-teal-600 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all z-40">
+            <i class="fa-solid fa-arrow-up"></i>
+        </a>
+
+    </div>
+</div>
+
+<script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // 1. Handle the loader
+        const loader = document.getElementById('loader-wrapper');
+        const mainContent = document.getElementById('main-content');
+
+        setTimeout(function() {
+            loader.style.opacity = '0';
+            loader.style.pointerEvents = 'none';
+            mainContent.style.display = 'block';
+
+            setTimeout(() => {
+                loader.remove();
+            }, 500);
+        }, 2000);
+
+        // 2. Initialize Swiper (from version 2)
+        var swiper = new Swiper('.testimonial-slider', {
+            direction: 'horizontal',
+            loop: true,
+            slidesPerView: 1,
+            spaceBetween: 30,
+            effect: 'fade',
+            fadeEffect: { crossFade: true },
+            autoplay: { delay: 5000, disableOnInteraction: false },
+            speed: 800,
+            pagination: { el: '.swiper-pagination', clickable: true },
+        });
+
+        // 3. Scroll reveal (from version 2)
+        const observer = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('revealed');
+                }
+            });
+        }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+        document.querySelectorAll('.scroll-reveal, .scroll-reveal-scale').forEach(el => observer.observe(el));
+
+        // 4. Scroll to top (from version 2)
+        const scrollToTopBtn = document.getElementById('scroll-to-top');
+        window.addEventListener('scroll', () => {
+            scrollToTopBtn.classList.toggle('visible', window.pageYOffset > 300);
+        });
+        scrollToTopBtn.addEventListener('click', e => {
+            e.preventDefault();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        // 5. Counter animation (from version 2)
+        function animateCounter(el) {
+            const target = parseInt(el.getAttribute('data-target'));
+            const duration = 2000;
+            const step = target / (duration / 16);
+            let current = 0;
+            const timer = setInterval(() => {
+                current += step;
+                if (current >= target) {
+                    el.textContent = target.toLocaleString();
+                    clearInterval(timer);
+                } else {
+                    el.textContent = Math.floor(current).toLocaleString();
+                }
+            }, 16);
+        }
+
+        const statObserver = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                // Check if it's visible and hasn't started (content is '0')
+                if (entry.isIntersecting && entry.target.textContent.trim() === '0') {
+                    animateCounter(entry.target);
+                    statObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.5 });
+        document.querySelectorAll('.stat-number').forEach(stat => statObserver.observe(stat));
+
+        // 6. Animate Growth Bars on Scroll (from version 2)
+        const growthObserver = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const fills = entry.target.querySelectorAll('.growth-fill');
+                    fills.forEach((fill, i) => {
+                        setTimeout(() => {
+                            const target = fill.getAttribute('data-target');
+                            fill.style.width = target + '%';
+                            setTimeout(() => {
+                                // Find the corresponding growth-value element
+                                const parentItem = fill.closest('.growth-item');
+                                if (parentItem) {
+                                    const valueEl = parentItem.querySelector('.growth-value');
+                                    if (valueEl) {
+                                        valueEl.classList.add('visible');
+                                    }
+                                }
+                            }, 300);
+                        }, i * 200);
+                    });
+                    growthObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.6 });
+
+        document.querySelectorAll('.bg-gradient-to-r').forEach(container => {
+            if (container.querySelector('.growth-fill')) {
+                growthObserver.observe(container);
+            }
+        });
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In - SwiftHire</title>
+
+    <link rel="icon" type="image/png" th:href="@{/images/nav.png}">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/typed.js@2.0.12"></script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <script>
+        // --- Tailwind Config (using your correct 'theme-teal' color) ---
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'sans-serif']
+                    },
+                    colors: {
+                        'theme-teal': {
+                            DEFAULT: '#008080', // Logo-matched teal
+                            '500': '#008080',
+                            '600': '#006666',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Apply the custom font */
+        body {
+            font-family: 'Inter', sans-serif;
+            overflow: hidden; /* Hide scrollbars for the split layout */
+        }
+
+        /* Staggered Fade-in Animation */
+        @keyframes fade-in-up {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Animation classes with delays */
+        .animate-fade-in-up-1 { animation: fade-in-up 0.5s ease-out forwards; opacity: 0; animation-delay: 0.1s; }
+        .animate-fade-in-up-2 { animation: fade-in-up 0.5s ease-out forwards; opacity: 0; animation-delay: 0.2s; }
+        .animate-fade-in-up-3 { animation: fade-in-up 0.5s ease-out forwards; opacity: 0; animation-delay: 0.3s; }
+        .animate-fade-in-up-4 { animation: fade-in-up 0.5s ease-out forwards; opacity: 0; animation-delay: 0.4s; }
+        .animate-fade-in-up-5 { animation: fade-in-up 0.5s ease-out forwards; opacity: 0; animation-delay: 0.5s; }
+        .animate-fade-in-up-6 { animation: fade-in-up 0.5s ease-out forwards; opacity: 0; animation-delay: 0.6s; }
+        .animate-fade-in-up-7 { animation: fade-in-up 0.5s ease-out forwards; opacity: 0; animation-delay: 0.7s; }
+        .animate-fade-in-up-8 { animation: fade-in-up 0.5s ease-out forwards; opacity: 0; animation-delay: 0.8s; }
+        .animate-fade-in-up-9 { animation: fade-in-up 0.5s ease-out forwards; opacity: 0; animation-delay: 0.9s; }
+        .animate-fade-in-up-10 { animation: fade-in-up 0.5s ease-out forwards; opacity: 0; animation-delay: 1.0s; }
+        .animate-fade-in-up-11 { animation: fade-in-up 0.5s ease-out forwards; opacity: 0; animation-delay: 1.1s; }
+        .animate-fade-in-up-12 { animation: fade-in-up 0.5s ease-out forwards; opacity: 0; animation-delay: 1.2s; }
+
+
+        /* Dark animated gradient for the Animation Panel */
+        .animated-panel-bg {
+            background: linear-gradient(-45deg, #003d3d, #001f1f, #006666);
+            background-size: 400% 400%;
+            animation: moveGradient 15s ease infinite;
+            position: relative;
+            overflow: hidden;
+        }
+
+        @keyframes moveGradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Particle background for the Animation Panel */
+        #particles-bg {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+        }
+
+        /* Style the typed.js cursor to be a matching teal */
+        .typed-cursor {
+            color: #008080; /* theme-teal */
+            animation: blink 0.7s infinite;
+        }
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+
+        /* Fix for select dropdown arrow not showing with padding */
+        select.pl-11 {
+            padding-left: 2.75rem; /* 44px */
+            background-position: right 0.75rem center; /* Moves the arrow */
+        }
+
+        /* --- NEW SLIDING PANEL STYLES --- */
+        .panel {
+            position: absolute;
+            top: 0;
+            height: 100vh; /* Full screen height */
+            width: 100%; /* Mobile-first: 100% width */
+            transition: left 0.7s cubic-bezier(0.77, 0, 0.175, 1); /* Smooth slide animation */
+        }
+
+        @media (min-width: 1024px) { /* lg breakpoint */
+            .panel {
+                width: 50%; /* Desktop: 50% width */
+            }
+
+            /* --- LOGIN VIEW (Default) --- */
+            #page-container.show-login #login-panel { left: 0; }
+            #page-container.show-login #animation-panel { left: 50%; }
+            #page-container.show-login #register-panel { left: 100%; } /* Off-screen */
+
+            /* --- REGISTER VIEW --- */
+            #page-container.show-register #login-panel { left: -50%; } /* Off-screen */
+            #page-container.show-register #animation-panel { left: 0; }
+            #page-container.show-register #register-panel { left: 50%; }
+        }
+
+        @media (max-width: 1023px) {
+            /* --- LOGIN VIEW (Mobile) --- */
+            #page-container.show-login #login-panel { left: 0; }
+            #page-container.show-login #register-panel { left: 100%; } /* Off-screen */
+
+            /* --- REGISTER VIEW (Mobile) --- */
+            #page-container.show-register #login-panel { left: -100%; } /* Off-screen */
+            #page-container.show-register #register-panel { left: 0; }
+        }
+
+        /* --- Logo Styles (Clickable & Centered) --- */
+        .panel-logo-link {
+            display: flex;
+            justify-content: center;
+            text-decoration: none;
+            transition: transform 0.3s ease, filter 0.3s ease;
+        }
+
+        .panel-logo-link:hover {
+            transform: scale(1.05);
+            filter: brightness(0.95);
+        }
+
+        .panel-logo {
+            height: 10rem;
+            width: auto;
+            animation: fade-in-up 0.5s ease-out forwards;
+            opacity: 0;
+            animation-delay: 0.05s;
+        }
+
+    </style>
+</head>
+<body class="font-['Inter',_sans-serif] bg-white">
+
+<div id="page-container" class="relative min-h-screen w-full overflow-hidden show-login">
+
+    <div id="animation-panel" class="panel hidden lg:block animated-panel-bg">
+
+        <div id="particles-bg"></div>
+
+        <div class="relative z-10 flex h-full flex-col justify-center items-center p-12 text-center text-white">
+            <h1 class="text-5xl font-extrabold drop-shadow-lg">
+                Welcome to SwiftHire
+            </h1>
+            <p class="mt-4 text-3xl font-light drop-shadow-md">
+                Your next <span id="typed-text"></span>
+            </p>
+        </div>
+    </div>
+
+    <div id="login-panel" class="panel flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-20 xl:px-24 overflow-y-auto">
+
+        <main class="mx-auto w-full max-w-sm lg:w-96 relative z-10">
+            <div>
+                <a th:href="@{/}" class="panel-logo-link">
+                    <img class="panel-logo" th:src="@{/images/logo.png}" alt="SwiftHire Logo">
+                </a>
+                <div class="mt-6 text-center animate-fade-in-up-2">
+                    <h2 class="text-3xl font-extrabold text-gray-900">
+                        Sign in to your account
+                    </h2>
+                </div>
+
+                <div class="mt-8 space-y-4">
+                    <div th:if="${successMessage}" class="animate-fade-in-up-3 rounded-lg border-l-4 border-green-500 bg-green-50 p-4" role="alert">
+                        <p class="font-bold text-green-800">Success</p>
+                        <p th:text="${successMessage}" class="text-sm text-green-700">Password successfully reset.</p>
+                    </div>
+                    <div th:if="${param.error}" class="animate-fade-in-up-3 rounded-lg border-l-4 border-red-500 bg-red-50 p-4" role="alert">
+                        <p class="font-bold text-red-800">Login Error</p>
+                        <p class="text-sm text-red-700">Invalid username or password.</p>
+                    </div>
+                </div>
+
+                <form method="POST" th:action="@{/login}" class="mt-8 space-y-6">
+
+                    <div class="relative animate-fade-in-up-3">
+                        <label for="username" class="sr-only">Username</label>
+                        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+                            <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" /></svg>
+                        </div>
+                        <input type="text" id="username" name="username"
+                               class="block w-full rounded-lg border border-gray-300 py-3 pl-11 pr-3 text-gray-900 shadow-sm transition duration-150 ease-in-out placeholder:text-gray-400 focus:border-theme-teal focus:outline-none focus:ring-2 focus:ring-theme-teal sm:text-sm"
+                               placeholder="Username"
+                               required>
+                    </div>
+
+                    <div class="relative animate-fade-in-up-4">
+                        <label for="password" class="sr-only">Password</label>
+                        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+                            <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd" /></svg>
+                        </div>
+                        <input type="password" id="password" name="password"
+                               class="block w-full rounded-lg border border-gray-300 py-3 pl-11 pr-3 text-gray-900 shadow-sm transition duration-150 ease-in-out placeholder:text-gray-400 focus:border-theme-teal focus:outline-none focus:ring-2 focus:ring-theme-teal sm:text-sm"
+                               placeholder="Password"
+                               required>
+                    </div>
+
+                    <div class="flex items-center justify-between animate-fade-in-up-5">
+                        <label class="flex items-center text-sm text-gray-600">
+                            <input type="checkbox" name="remember-me" class="h-4 w-4 rounded border-gray-300 text-theme-teal focus:ring-theme-teal">
+                            <span class="ml-2">Remember Me</span>
+                        </label>
+                        <a th:href="@{/forgot-password}" class="text-sm font-medium text-theme-teal hover:text-theme-teal-600 transition-colors">
+                            Forgot Password?
+                        </a>
+                    </div>
+
+                    <div class="animate-fade-in-up-6">
+                        <button type="submit"
+                                class="flex w-full justify-center rounded-lg border border-transparent bg-theme-teal py-3 px-4 text-lg font-semibold text-white shadow-md transition-all duration-300 ease-in-out
+                                           hover:bg-theme-teal-600
+                                           focus:outline-none focus:ring-2 focus:ring-theme-teal focus:ring-offset-2
+                                           transform hover:scale-105 active:scale-95">
+                            Sign In
+                        </button>
+                    </div>
+                </form>
+
+                <p class="mt-10 text-center text-sm text-gray-500 animate-fade-in-up-6">
+                    Don't have an account?
+                    <a href="#" id="to-register-link" class="font-semibold leading-6 text-theme-teal hover:text-theme-teal-600 transition-colors">
+                        Register here
+                    </a>
+                </p>
+            </div>
+        </main>
+    </div>
+
+    <div id="register-panel" class="panel flex flex-col py-12 px-4 sm:px-6 lg:px-20 xl:px-24 relative overflow-y-auto">
+
+        <main class="mx-auto w-full max-w-sm lg:w-96 relative z-10">
+
+            <div>
+                <a th:href="@{/}" class="panel-logo-link">
+                    <img class="panel-logo" th:src="@{/images/logo.png}" alt="SwiftHire Logo">
+                </a>
+
+                <div class="mt-6 text-center animate-fade-in-up-2">
+                    <h2 class="text-3xl font-extrabold text-gray-900">
+                        Create your account
+                    </h2>
+                </div>
+
+                <div class="mt-8 space-y-4">
+                    <div th:if="${errorMessage}" class="animate-fade-in-up-3 rounded-lg border-l-4 border-red-500 bg-red-50 p-4" role="alert">
+                        <p class="font-bold text-red-800">Registration Error</p>
+                        <p th:text="${errorMessage}" class="text-sm text-red-700">Error placeholder</p>
+                    </div>
+                </div>
+
+                <form method="POST" th:action="@{/register}" th:object="${user}" class="mt-8 space-y-6">
+
+                    <div class="flex gap-4 animate-fade-in-up-3">
+                        <div class="relative w-1/2">
+                            <label for="firstName" class="sr-only">First Name</label>
+                            <input type="text" id="firstName" th:field="*{firstName}"
+                                   class="block w-full rounded-lg border border-gray-300 py-3 px-4 text-gray-900 shadow-sm transition duration-150 ease-in-out placeholder:text-gray-400 focus:border-theme-teal focus:outline-none focus:ring-2 focus:ring-theme-teal sm:text-sm"
+                                   placeholder="First Name"
+                                   required>
+                        </div>
+                        <div class="relative w-1/2">
+                            <label for="lastName" class="sr-only">Last Name</label>
+                            <input type="text" id="lastName" th:field="*{lastName}"
+                                   class="block w-full rounded-lg border border-gray-300 py-3 px-4 text-gray-900 shadow-sm transition duration-150 ease-in-out placeholder:text-gray-400 focus:border-theme-teal focus:outline-none focus:ring-2 focus:ring-theme-teal sm:text-sm"
+                                   placeholder="Last Name"
+                                   required>
+                        </div>
+                    </div>
+
+                    <div class="relative animate-fade-in-up-4">
+                        <label for="reg-username" class="sr-only">Username</label>
+                        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+                            <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" /></svg>
+                        </div>
+                        <input type="text" id="reg-username" th:field="*{username}"
+                               class="block w-full rounded-lg border border-gray-300 py-3 pl-11 pr-3 text-gray-900 shadow-sm transition duration-150 ease-in-out placeholder:text-gray-400 focus:border-theme-teal focus:outline-none focus:ring-2 focus:ring-theme-teal sm:text-sm"
+                               placeholder="Username"
+                               required>
+                    </div>
+
+                    <div class="relative animate-fade-in-up-5">
+                        <label for="email" class="sr-only">Email</label>
+                        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+                            <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M3 4a2 2 0 00-2 2v1.161l8.441 4.221a1.25 1.25 0 001.118 0L19 7.161V6a2 2 0 00-2-2H3z" /><path d="M19 8.839l-7.77 3.885a2.75 2.75 0 01-2.46 0L1 8.839V14a2 2 0 002 2h14a2 2 0 002-2V8.839z" /></svg>
+                        </div>
+                        <input type="email" id="email" th:field="*{email}"
+                               class="block w-full rounded-lg border border-gray-300 py-3 pl-11 pr-3 text-gray-900 shadow-sm transition duration-150 ease-in-out placeholder:text-gray-400 focus:border-theme-teal focus:outline-none focus:ring-2 focus:ring-theme-teal sm:text-sm"
+                               placeholder="Email Address"
+                               required>
+                    </div>
+
+                    <div class="relative animate-fade-in-up-6">
+                        <label for="reg-password" class="sr-only">Password</label>
+                        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+                            <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd" /></svg>
+                        </div>
+                        <input type="password" id="reg-password" th:field="*{password}"
+                               class="block w-full rounded-lg border border-gray-300 py-3 pl-11 pr-3 text-gray-900 shadow-sm transition duration-150 ease-in-out placeholder:text-gray-400 focus:border-theme-teal focus:outline-none focus:ring-2 focus:ring-theme-teal sm:text-sm"
+                               placeholder="Password"
+                               required>
+                    </div>
+
+                    <div class="relative animate-fade-in-up-7">
+                        <label for="securityQuestion" class="sr-only">Security Question</label>
+                        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+                            <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v.5a.75.75 0 01-1.5 0v-.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <select id="securityQuestion" th:field="*{securityQuestion}"
+                                class="block w-full rounded-lg border border-gray-300 py-3 pl-11 pr-10 text-gray-900 shadow-sm transition duration-150 ease-in-out focus:border-theme-teal focus:outline-none focus:ring-2 focus:ring-theme-teal sm:text-sm"
+                                required>
+                            <option value="" disabled selected>Select a security question...</option>
+                            <option value="pet">What is the name of your first pet?</option>
+                            <option value="car">What was your first car?</option>
+                            <option value="maiden_name">What is your mother's maiden name?</option>
+                            <option value="high_school">What high school did you attend?</option>
+                            <option value="first_school">What is the name of your first school?</option>
+                            <option value="birth_city">In what city were you born?</option>
+                            <option value="movie">What is your favorite movie?</option>
+                            <option value="food">What is your favorite food?</option>
+                            <option value="best_friend">What is the name of your childhood best friend?</option>
+                            <option value="street">What street did you grow up on?</option>
+                        </select>
+                    </div>
+
+                    <div class="relative animate-fade-in-up-8">
+                        <label for="securityAnswer" class="sr-only">Security Answer</label>
+                        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+                            <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 1a.75.75 0 01.75.75V2.5h.5a.75.75 0 010 1.5h-.5v.5a.75.75 0 01-1.5 0v-.5h-.5a.75.75 0 010-1.5h.5V1.75A.75.75 0 0110 1z" clip-rule="evenodd" /></svg>
+                        </div>
+                        <input type="text" id="securityAnswer" th:field="*{securityAnswer}"
+                               class="block w-full rounded-lg border border-gray-300 py-3 pl-11 pr-3 text-gray-900 shadow-sm transition duration-150 ease-in-out placeholder:text-gray-400 focus:border-theme-teal focus:outline-none focus:ring-2 focus:ring-theme-teal sm:text-sm"
+                               placeholder="Your Answer"
+                               required>
+                    </div>
+
+                    <div class="animate-fade-in-up-9">
+                        <label class="block text-sm font-medium text-gray-700">Register as a:</label>
+                        <fieldset class="mt-2">
+                            <div class="flex space-x-4">
+                                <label class="flex items-center text-sm text-gray-600">
+                                    <input type="radio" name="roleType" id="roleSeeker" value="JOB_SEEKER" class="h-4 w-4 border-gray-300 text-theme-teal focus:ring-theme-teal" checked onclick="toggleCompanyField()">
+                                    <span class="ml-2">Job Seeker</span>
+                                </label>
+                                <label class="flex items-center text-sm text-gray-600">
+                                    <input type="radio" name="roleType" id="roleEmployer" value="EMPLOYER" class="h-4 w-4 border-gray-300 text-theme-teal focus:ring-theme-teal" onclick="toggleCompanyField()">
+                                    <span class="ml-2">Employer</span>
+                                </label>
+                            </div>
+                        </fieldset>
+                    </div>
+
+                    <div id="companyNameField" class="relative animate-fade-in-up-10" style="display: none;">
+                        <label for="companyName" class="sr-only">Company Name</label>
+                        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+                            <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 16.5v-13h-.25a.75.75 0 010-1.5H17a.75.75 0 010 1.5H16.75v13H17a.75.75 0 010 1.5H3.75a.75.75 0 010-1.5H4zm2-1.5a.75.75 0 00-.75.75v.008c0 .414.336.75.75.75h.008a.75.75 0 00.75-.75v-.008a.75.75 0 00-.75-.75H6zm0-6a.75.75 0 00-.75.75v.008c0 .414.336.75.75.75h.008a.75.75 0 00.75-.75v-.008a.75.75 0 00-.75-.75H6zm0-6a.75.75 0 00-.75.75v.008c0 .414.336.75.75.75h.008a.75.75 0 00.75-.75v-.008A.75.75 0 006 3z" clip-rule="evenodd" /></svg>
+                        </div>
+                        <input type="text" id="companyName" name="companyName"
+                               class="block w-full rounded-lg border border-gray-300 py-3 pl-11 pr-3 text-gray-900 shadow-sm transition duration-150 ease-in-out placeholder:text-gray-400 focus:border-theme-teal focus:outline-none focus:ring-2 focus:ring-theme-teal sm:text-sm"
+                               placeholder="Company Name">
+                    </div>
+
+                    <div class="animate-fade-in-up-11">
+                        <button type="submit"
+                                class="flex w-full justify-center rounded-lg border border-transparent bg-theme-teal py-3 px-4 text-lg font-semibold text-white shadow-md transition-all duration-300 ease-in-out
+                                           hover:bg-theme-teal-600
+                                           focus:outline-none focus:ring-2 focus:ring-theme-teal focus:ring-offset-2
+                                           transform hover:scale-105 active:scale-95">
+                            Create Account
+                        </button>
+                    </div>
+                </form>
+
+                <p class="mt-10 text-center text-sm text-gray-500 animate-fade-in-up-12">
+                    Already have an account?
+                    <a href="#" id="to-login-link" class="font-semibold leading-6 text-theme-teal hover:text-theme-teal-600 transition-colors">
+                        Sign in here
+                    </a>
+                </p>
+            </div>
+        </main>
+    </div>
+
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // 1. Initialize particles.js on the LEFT/ANIMATION side
+        particlesJS("particles-bg", {
+            "particles": {
+                "number": { "value": 60, "density": { "enable": true, "value_area": 800 } },
+                "color": { "value": "#ffffff" }, // White particles on dark bg
+                "shape": { "type": "circle" },
+                "opacity": { "value": 0.3, "random": true },
+                "size": { "value": 3, "random": true },
+                "line_linked": {
+                    "enable": true, "distance": 150,
+                    "color": "#ffffff", // White lines on dark bg
+                    "opacity": 0.1, "width": 1
+                },
+                "move": { "enable": true, "speed": 1, "direction": "none", "random": true, "straight": false, "out_mode": "out" }
+            },
+            "interactivity": {
+                "detect_on": "canvas",
+                "events": { "onhover": { "enable": true, "mode": "grab" }, "resize": true },
+                "modes": { "grab": { "distance": 140, "line_opacity": 0.3 } }
+            },
+            "retina_detect": true
+        });
+
+        // 2. Initialize Typed.js for the motivational text
+        new Typed('#typed-text', {
+            strings: [
+                'opportunity is waiting.',
+                'dream job is here.',
+                'career starts now.',
+                'future begins with SwiftHire.'
+            ],
+            typeSpeed: 50,
+            backSpeed: 30,
+            backDelay: 2000,
+            startDelay: 500,
+            loop: true,
+            smartBackspace: true,
+            cursorChar: '▋'
+        });
+
+        // 3. JavaScript for the sliding animation
+        const pageContainer = document.getElementById('page-container');
+        const toRegisterLink = document.getElementById('to-register-link');
+        const toLoginLink = document.getElementById('to-login-link');
+
+        toRegisterLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            pageContainer.classList.add('show-register');
+            pageContainer.classList.remove('show-login');
+        });
+
+        toLoginLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            pageContainer.classList.remove('show-register');
+            pageContainer.classList.add('show-login');
+        });
+
+        // 4. Check URL parameter to show register form directly
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('register') === 'true') {
+            pageContainer.classList.add('show-register');
+            pageContainer.classList.remove('show-login');
+        }
+
+        // 5. JavaScript for conditional Company Name field
+        window.toggleCompanyField = function() {
+            var companyField = document.getElementById('companyNameField');
+            var companyInput = document.getElementById('companyName');
+            if (document.getElementById('roleEmployer').checked) {
+                companyField.style.display = 'block';
+                companyInput.required = true;
+            } else {
+                companyField.style.display = 'none';
+                companyInput.required = false;
+            }
+        }
+        // Run on page load
+        toggleCompanyField();
+    });
+</script>
+
+</body>
+</html>

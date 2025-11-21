@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin: Support Inbox - SwiftHire</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" th:href="@{/images/nav.png}">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <script>
+        // --- Tailwind Config ---
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'sans-serif']
+                    },
+                    colors: {
+                        'theme-teal': {
+                            DEFAULT: '#008080', // Logo-matched teal
+                            '500': '#008080',
+                            '600': '#006666', // A darker shade
+                        },
+                        'gray': {
+                            ...tailwind.theme.colors.gray,
+                            '800': '#1f2937',
+                            '900': '#111827',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Apply the custom font */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827; /* bg-gray-900 */
+        }
+
+        /* Sidebar styles */
+        .sidebar {
+            background-color: #1f2937; /* bg-gray-800 */
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        .sidebar::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* --- Chat-Specific Styles (Dark Theme) --- */
+        .chat-layout {
+            display: flex;
+            /* Height calculation: 100vh - header height - main padding */
+            height: calc(100vh - 4.5rem - 3rem);
+            max-height: 800px; /* Added max-height */
+        }
+
+        /* This is the list of users on the left of the chat */
+        .chat-user-list {
+            width: 320px;
+            background: #1f2937; /* bg-gray-800 */
+            border-right: 1px solid #374151; /* border-gray-700 */
+            overflow-y: auto;
+            flex-shrink: 0;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        .chat-user-list::-webkit-scrollbar {
+            display: none;
+        }
+
+        .chat-main {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            background: #111827; /* bg-gray-900 */
+        }
+
+        /* This is the header *inside* the chat window showing the user's name */
+        .chat-header {
+            flex-shrink: 0;
+            padding: 1rem;
+            background-color: #1f2937; /* bg-gray-800 */
+            border-bottom: 1px solid #374151; /* border-gray-700 */
+            font-weight: bold;
+            color: #d1d5db; /* text-gray-300 */
+        }
+
+        .message-history {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .input-area {
+            flex-shrink: 0;
+            padding: 1rem;
+            background: #1f2937; /* bg-gray-800 */
+            border-top: 1px solid #374151; /* border-gray-700 */
+        }
+
+        .input-form {
+            display: flex;
+            align-items: center;
+            border: 1px solid #4b5563; /* border-gray-600 */
+            border-radius: 25px;
+            overflow: hidden;
+            background: #374151; /* bg-gray-700 */
+        }
+
+        .input-form input {
+            flex-grow: 1;
+            padding: 10px 15px;
+            border: none;
+            outline: none;
+            background: transparent;
+            color: #d1d5db; /* text-gray-300 */
+            placeholder-color: #6b7280; /* placeholder-gray-500 */
+        }
+
+        .input-form button {
+            padding: 10px 15px;
+            background-color: #008080; /* theme-teal */
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .input-form button:hover {
+            background-color: #006666; /* theme-teal-600 */
+        }
+
+        .user-list-item.active-chat {
+            background-color: rgba(0, 128, 128, 0.3); /* theme-teal with opacity */
+            border-right: 3px solid #008080;
+        }
+
+        .user-list-header {
+            padding: 1rem;
+            font-size: 0.875rem; /* text-sm */
+            font-weight: 600; /* font-semibold */
+            color: #9ca3af; /* text-gray-400 */
+            background: #111827; /* bg-gray-900 */
+            border-bottom: 1px solid #374151; /* border-gray-700 */
+            text-transform: uppercase;
+        }
+
+        .message-bubble {
+            max-width: 70%;
+            padding: 10px 15px;
+            border-radius: 20px;
+            margin-bottom: 10px;
+            clear: both;
+            line-height: 1.4;
+        }
+
+        .sent {
+            float: right;
+            background-color: #008080; /* theme-teal */
+            color: white;
+        }
+
+        .received {
+            float: left;
+            background-color: #374151; /* bg-gray-700 */
+            color: #e5e7eb; /* text-gray-200 */
+        }
+
+        .message-time {
+            display: block;
+            font-size: 0.65rem;
+            margin-top: 5px;
+            color: #9ca3af; /* text-gray-400 */
+            text-align: right;
+        }
+
+    </style>
+</head>
+<body class="font-['Inter',_sans-serif]">
+
+<div id="main-content" class="flex min-h-screen bg-gray-900 text-gray-300">
+
+    <div class="sidebar fixed top-0 left-0 h-full w-64 z-30 flex flex-col p-4 overflow-y-auto">
+        <a th:href="@{/}" class="p-2 mb-6 flex items-center justify-center">
+            <img class="h-24 w-auto" th:src="@{/images/logo.png}" alt="SwiftHire Logo">
+        </a>
+
+        <div class="flex flex-col items-center justify-center p-4 mb-6 bg-teal-500/10 border border-teal-500/20 rounded-lg">
+            <div class="w-16 h-16 bg-theme-teal flex items-center justify-center rounded-full mb-2">
+                <i class="fa-solid fa-user-shield text-white text-3xl"></i>
+            </div>
+            <p class="text-sm font-semibold mt-1 text-white">Admin</p>
+            <p class="text-xs text-gray-400">System Administrator</p>
+        </div>
+
+        <nav class="flex-1 space-y-2">
+            <p class="text-xs uppercase font-semibold text-gray-500 ml-3 mb-2">Management</p>
+
+            <a th:href="@{/admin/dashboard}"
+               class="nav-link flex items-center space-x-3 p-3 rounded-lg transition duration-150 font-medium text-gray-400 hover:bg-gray-700 hover:text-white">
+                <i class="fa-solid fa-fw fa-home w-6 text-center text-lg"></i>
+                <span>Dashboard</span>
+            </a>
+
+            <a th:href="@{/admin/users}"
+               class="nav-link flex items-center space-x-3 p-3 rounded-lg transition duration-150 font-medium text-gray-400 hover:bg-gray-700 hover:text-white">
+                <i class="fa-solid fa-fw fa-users-cog w-6 text-center text-lg"></i>
+                <span>User Management</span>
+            </a>
+
+            <a th:href="@{/admin/support}"
+               class="nav-link flex items-center justify-between p-3 rounded-lg transition duration-150 font-medium bg-theme-teal text-white shadow-sm">
+                <div class="flex items-center space-x-3">
+                    <i class="fa-solid fa-fw fa-headset w-6 text-center text-lg"></i>
+                    <span>Support Inbox</span>
+                </div>
+            </a>
+        </nav>
+
+        <div class="mt-auto pt-4 border-t border-gray-700 space-y-2">
+            <a th:href="@{/}" class="flex items-center space-x-3 p-3 rounded-lg transition duration-150 font-medium text-gray-400 hover:bg-gray-700 hover:text-white">
+                <i class="fa-solid fa-fw fa-globe w-6 text-center text-lg"></i>
+                <span>Public Home Page</span>
+            </a>
+            <form th:action="@{/logout}" method="post" class="w-full">
+                <button type="submit"
+                        class="flex items-center space-x-3 p-3 rounded-lg transition duration-150 font-medium text-red-500 hover:bg-red-700 hover:text-white w-full text-left">
+                    <i class="fa-solid fa-fw fa-arrow-right-from-bracket w-6 text-center text-lg"></i>
+                    <span>Logout</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="w-full flex-1 flex flex-col" style="padding-left: 16rem;">
+
+        <header class="main-header flex items-center justify-between p-6 bg-gray-800 border-b border-gray-700 h-18">
+            <h1 class="text-2xl font-bold text-white">Support Inbox</h1>
+
+        </header>
+
+        <main class="flex-1 p-6 overflow-y-auto">
+
+            <div class="chat-layout bg-gray-800 border border-gray-700 rounded-lg shadow-lg overflow-hidden">
+
+                <div class="chat-user-list">
+                    <div class="user-list-header">Job Seekers</div>
+                    <div id="seeker-list">
+                        <div th:each="seeker : ${seekers}" class="user-list-item p-4 cursor-pointer border-b border-gray-700 hover:bg-gray-700"
+                             th:data-user-id="${seeker.id}"
+                             th:data-user-name="${seeker.firstName} + ' ' + ${seeker.lastName}"
+                             th:data-user-role="${seeker.role.name}">
+                            <div class="font-medium text-white" th:text="${seeker.firstName} + ' ' + ${seeker.lastName}"></div>
+                            <div class="text-xs text-gray-400" th:text="${seeker.email}"></div>
+                        </div>
+                    </div>
+
+                    <div class="user-list-header">Employers</div>
+                    <div id="employer-list">
+                        <div th:each="employer : ${employers}" class="user-list-item p-4 cursor-pointer border-b border-gray-700 hover:bg-gray-700"
+                             th:data-user-id="${employer.id}"
+                             th:data-user-name="${employer.companyName}"
+                             th:data-user-role="${employer.role.name}">
+                            <div class="font-medium text-white" th:text="${employer.companyName}"></div>
+                            <div class="text-xs text-gray-400" th:text="${employer.email}"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chat-main" id="chat-main-window">
+                    <div class="flex items-center justify-center h-full text-gray-500" id="chat-placeholder">
+                        <i class="fa-solid fa-arrow-left mr-2"></i> Select a user from the left to view their support chat.
+                    </div>
+
+                </div>
+            </div>
+
+        </main>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    const adminIdGlobal = /*[[${adminUser.id}]]*/ 0;
+    /*]]>*/
+</script>
+
+<script src="/js/admin-support.js"></script>
+
+</body>
+</html>
